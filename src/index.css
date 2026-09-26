@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
+
+/* Custom scrollbars for dark medical theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080f1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00e5a3;
+}
+
+/* Glowing animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 229, 163, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 229, 163, 0.35);
+  }
+}
+
+.glow-teal-subtle {
+  animation: pulseGlow 4s infinite ease-in-out;
+}

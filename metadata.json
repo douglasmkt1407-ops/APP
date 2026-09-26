@@ -1,0 +1,6 @@
+{
+  "name": "NEXTENF - Técnico em Foco",
+  "description": "Plataforma avançada de estudos para Enfermagem e Concursos: +100 flashcards, 10 simulados calibrados por dificuldade, resumos express interativos e sprint de 7 dias.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
