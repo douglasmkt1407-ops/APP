@@ -8,7 +8,9 @@ import {
   Sparkles,
   X,
   CheckCircle2,
-  Clock
+  Clock,
+  Smartphone,
+  Download
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -28,7 +30,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
     sessionLastExitTime,
     sessionActiveSeconds,
     isSessionTracking,
-    formatDurationHHMMSS
+    formatDurationHHMMSS,
+    setIsInstallModalOpen,
+    canInstallPwa,
+    promptPwaInstall
   } = useApp();
 
   const getViewTitle = () => {
@@ -132,6 +137,23 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             <span>{stats.consecutiveDays}</span>
             <span className="hidden sm:inline text-slate-400 font-normal">dias</span>
           </div>
+
+          {/* Add to Home Screen / PWA button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (canInstallPwa) {
+                promptPwaInstall();
+              } else {
+                setIsInstallModalOpen(true);
+              }
+            }}
+            title="Adicionar à Tela Inicial / Instalar App"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#00E5A3]/10 hover:bg-[#00E5A3]/20 border border-[#00E5A3]/30 hover:border-[#00E5A3] text-xs font-bold text-[#00E5A3] transition-all cursor-pointer shadow-sm group"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Instalar App</span>
+          </button>
 
           {/* Quick notification test trigger */}
           <button

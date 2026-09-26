@@ -13,9 +13,10 @@ import { ModoFocoView } from './components/views/ModoFocoView';
 import { SprintView } from './components/views/SprintView';
 import { ConfiguracoesView } from './components/views/ConfiguracoesView';
 import { SuporteView } from './components/views/SuporteView';
+import { InstallAppModal } from './components/InstallAppModal';
 
 const MainContent: React.FC = () => {
-  const { user, currentView } = useApp();
+  const { user, currentView, isInstallModalOpen, setIsInstallModalOpen } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // If user is not authenticated, show login/register modal
@@ -78,6 +79,12 @@ const MainContent: React.FC = () => {
           {renderCurrentView()}
         </main>
       </div>
+
+      {/* PWA / Add to Home Screen Modal */}
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+      />
     </div>
   );
 };

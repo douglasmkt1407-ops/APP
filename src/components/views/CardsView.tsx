@@ -207,7 +207,7 @@ export const CardsView: React.FC = () => {
             {/* Card Progress counter & navigation bar */}
             <div className="flex items-center justify-between text-xs text-slate-400 px-2">
               <span>
-                Card <strong className="text-white">{currentIndex + 1}</strong> de{' '}
+                Card <strong className="text-white">{safeIndex + 1}</strong> de{' '}
                 <strong className="text-white">{filteredCards.length}</strong>
               </span>
 

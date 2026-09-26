@@ -10,7 +10,10 @@ import {
   Award,
   Flame,
   Zap,
-  RotateCcw
+  RotateCcw,
+  Smartphone,
+  Download,
+  Database
 } from 'lucide-react';
 
 export const InicioView: React.FC = () => {
@@ -27,7 +30,10 @@ export const InicioView: React.FC = () => {
     sessionEntryTime,
     sessionActiveSeconds,
     isSessionTracking,
-    formatDurationHHMMSS
+    formatDurationHHMMSS,
+    setIsInstallModalOpen,
+    canInstallPwa,
+    promptPwaInstall
   } = useApp();
 
   return (
@@ -348,6 +354,41 @@ export const InicioView: React.FC = () => {
             Roteiro estruturado de revisão passo a passo para a sua aprovação.
           </p>
         </div>
+      </div>
+
+      {/* PWA Install & Account Persistence Banner */}
+      <div className="rounded-2xl bg-[#081527] border border-[#142A46] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#00E5A3]/10 text-[#00E5A3] flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-bold text-white">Adicione o App à Tela Inicial</h4>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00E5A3]/10 text-[#00E5A3] font-bold border border-[#00E5A3]/25">
+                PWA
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Estude em tela cheia com acesso rápido em 1 toque e progresso 100% salvo na sua conta.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (canInstallPwa) {
+              promptPwaInstall();
+            } else {
+              setIsInstallModalOpen(true);
+            }
+          }}
+          className="px-4 py-2.5 rounded-xl bg-[#00E5A3] hover:bg-[#00c98f] text-slate-900 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,163,0.3)]"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Adicionar à Tela Inicial</span>
+        </button>
       </div>
     </div>
   );

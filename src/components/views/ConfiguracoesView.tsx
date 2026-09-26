@@ -23,13 +23,22 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   Check,
-  X
+  X,
+  Smartphone,
+  KeyRound,
+  Database,
+  Lock,
+  Download
 } from 'lucide-react';
 
 export const ConfiguracoesView: React.FC = () => {
   const {
     user,
     updateProfile,
+    changePassword,
+    setIsInstallModalOpen,
+    promptPwaInstall,
+    canInstallPwa,
     notifications,
     updateNotificationSettings,
     requestBrowserNotificationPermission,
@@ -51,6 +60,12 @@ export const ConfiguracoesView: React.FC = () => {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetSuccessBanner, setResetSuccessBanner] = useState(false);
   const [demoSuccessBanner, setDemoSuccessBanner] = useState(false);
+
+  // Change password states
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [confirmPasswordVal, setConfirmPasswordVal] = useState('');
+  const [passwordChangeFeedback, setPasswordChangeFeedback] = useState<{ text: string; isError?: boolean } | null>(null);
   
   // Profile photo state
   const [photoFeedback, setPhotoFeedback] = useState<{ text: string; isError?: boolean } | null>(null);
@@ -690,14 +705,159 @@ export const ConfiguracoesView: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="mt-2 px-5 py-2.5 rounded-xl bg-[#00E5A3] hover:bg-[#00c98f] text-slate-900 font-extrabold text-xs flex items-center gap-1.5 shadow-[0_2px_12px_rgba(0,229,163,0.3)] transition-all cursor-pointer"
-        >
-          <Save className="w-3.5 h-3.5" />
-          <span>Salvar Alterações</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <button
+            type="submit"
+            className="px-5 py-2.5 rounded-xl bg-[#00E5A3] hover:bg-[#00c98f] text-slate-900 font-extrabold text-xs flex items-center gap-1.5 shadow-[0_2px_12px_rgba(0,229,163,0.3)] transition-all cursor-pointer"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>Salvar Alterações</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowPasswordChange(!showPasswordChange);
+              setPasswordChangeFeedback(null);
+            }}
+            className="px-4 py-2.5 rounded-xl bg-[#060D17] hover:bg-[#102238] border border-[#162D4A] hover:border-[#00E5A3]/50 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-[#00E5A3]" />
+            <span>{showPasswordChange ? 'Ocultar Senha' : 'Alterar Senha de Acesso'}</span>
+          </button>
+        </div>
+
+        {/* Change password subsection */}
+        {showPasswordChange && (
+          <div className="mt-4 pt-4 border-t border-[#142A46] space-y-3 bg-[#060D17] p-4 rounded-2xl border">
+            <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-[#00E5A3]" />
+              <span>Atualizar Senha da Conta ({user?.email})</span>
+            </h4>
+
+            {passwordChangeFeedback && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  passwordChangeFeedback.isError
+                    ? 'bg-rose-500/15 border border-rose-500/40 text-rose-300'
+                    : 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-300'
+                }`}
+              >
+                {passwordChangeFeedback.isError ? (
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                )}
+                <span>{passwordChangeFeedback.text}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  Nova Senha
+                </label>
+                <input
+                  type="password"
+                  value={newPasswordVal}
+                  onChange={e => setNewPasswordVal(e.target.value)}
+                  placeholder="Mínimo 3 dígitos"
+                  className="w-full bg-[#0A1424] border border-[#162942] rounded-xl px-3 py-2 text-xs text-white focus:border-[#00E5A3] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  Confirmar Nova Senha
+                </label>
+                <input
+                  type="password"
+                  value={confirmPasswordVal}
+                  onChange={e => setConfirmPasswordVal(e.target.value)}
+                  placeholder="Repita a nova senha"
+                  className="w-full bg-[#0A1424] border border-[#162942] rounded-xl px-3 py-2 text-xs text-white focus:border-[#00E5A3] outline-none"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!user?.email) return;
+                if (!newPasswordVal || newPasswordVal.length < 3) {
+                  setPasswordChangeFeedback({ text: 'A nova senha deve ter no mínimo 3 dígitos.', isError: true });
+                  return;
+                }
+                if (newPasswordVal !== confirmPasswordVal) {
+                  setPasswordChangeFeedback({ text: 'As senhas não conferem.', isError: true });
+                  return;
+                }
+                const res = changePassword(user.email, newPasswordVal);
+                if (res.success) {
+                  setPasswordChangeFeedback({ text: 'Senha alterada com sucesso e salva na memória permanente!', isError: false });
+                  setNewPasswordVal('');
+                  setConfirmPasswordVal('');
+                } else {
+                  setPasswordChangeFeedback({ text: res.message, isError: true });
+                }
+              }}
+              className="px-4 py-2 rounded-xl bg-[#00E5A3] text-slate-900 font-bold text-xs hover:bg-[#00c98f] transition-colors cursor-pointer"
+            >
+              Salvar Nova Senha
+            </button>
+          </div>
+        )}
       </form>
+
+      {/* SECTION: INSTALL APP / ADD TO HOME SCREEN */}
+      <div className="bg-[#091526] border border-[#00E5A3]/30 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between pb-3 border-b border-[#142A46]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#00E5A3]/10 flex items-center justify-center text-[#00E5A3]">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Adicionar à Tela Inicial</h2>
+              <p className="text-xs text-slate-400">
+                Acesse o NEXTENF como um aplicativo nativo no celular ou computador
+              </p>
+            </div>
+          </div>
+
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#00E5A3]/15 text-[#00E5A3] border border-[#00E5A3]/30 hidden sm:inline">
+            PWA Disponível
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Instale o NEXTENF no seu dispositivo para abrir em tela cheia, receber lembretes de estudo e acessar instantaneamente sem precisar digitar o link no navegador.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (canInstallPwa) {
+                promptPwaInstall();
+              } else {
+                setIsInstallModalOpen(true);
+              }
+            }}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00E5A3] to-[#00C2FF] text-[#060D17] font-extrabold text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(0,229,163,0.3)] transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Instalar Aplicativo na Tela Inicial</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsInstallModalOpen(true)}
+            className="px-4 py-2.5 rounded-xl bg-[#060D17] hover:bg-[#102238] border border-[#162D4A] text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <span>Ver Instruções para iPhone / Android</span>
+          </button>
+        </div>
+      </div>
 
       {/* SECTION 3: DATA RESET / DEMO MANAGEMENT */}
       <div className="bg-[#091526] border border-rose-500/20 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xl">

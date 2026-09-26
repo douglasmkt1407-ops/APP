@@ -14,7 +14,8 @@ import {
   LogOut,
   Sparkles,
   Activity,
-  Timer
+  Timer,
+  Smartphone
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,7 +23,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
-  const { currentView, setCurrentView, user, logout } = useApp();
+  const { currentView, setCurrentView, user, logout, setIsInstallModalOpen } = useApp();
 
   const navItems: { id: ViewType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'inicio', label: 'Início', icon: Home },
@@ -139,6 +140,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
             </svg>
           </div>
         </div>
+
+        {/* Add to home screen / install quick banner */}
+        <button
+          type="button"
+          onClick={() => {
+            setIsInstallModalOpen(true);
+            if (onCloseMobile) onCloseMobile();
+          }}
+          className="w-full py-2 px-3 rounded-xl bg-[#091628] hover:bg-[#0E2038] border border-[#162D4A] hover:border-[#00E5A3]/40 text-xs text-[#00E5A3] font-semibold flex items-center justify-between transition-all cursor-pointer group shadow-sm"
+        >
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-3.5 h-3.5 text-[#00E5A3]" />
+            <span className="text-slate-200 text-[11px] group-hover:text-white">Instalar Aplicativo</span>
+          </div>
+          <span className="text-[10px] text-[#00E5A3] font-bold">Tela Inicial</span>
+        </button>
 
         {/* User preview and logout */}
         {user && (

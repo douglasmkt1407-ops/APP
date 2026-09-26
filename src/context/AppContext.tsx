@@ -18,6 +18,20 @@ import { SIMULADOS_DATA } from '../data/simuladosData';
 import { SUMMARIES_DATA } from '../data/summariesData';
 import { INITIAL_SPRINT_DAYS } from '../data/sprintData';
 import confetti from 'canvas-confetti';
+import {
+  UserAccountMemory,
+  getAllAccounts,
+  saveAllAccounts,
+  getAccountByEmail,
+  saveOrUpdateAccount,
+  updateActiveAccountData,
+  getSavedCredentials,
+  setSavedCredentials,
+  getActiveEmail,
+  setActiveEmail,
+  isExplicitLoggedOut,
+  updateAccountPassword
+} from '../utils/userMemory';
 
 export interface RegisteredAccount {
   id: string;
@@ -34,11 +48,19 @@ interface AppContextType {
   currentView: ViewType;
   setCurrentView: (view: ViewType) => void;
   user: UserProfile | null;
-  login: (email: string, password?: string) => { success: boolean; message?: string };
-  registerAccount: (email: string, password: string, name: string, targetExam: string) => { success: boolean; message?: string };
+  login: (email: string, password?: string, rememberMe?: boolean) => { success: boolean; message?: string };
+  registerAccount: (email: string, password: string, name: string, targetExam: string, rememberMe?: boolean) => { success: boolean; message?: string };
   logout: () => void;
   updateProfile: (name: string, targetExam: string, avatarUrl?: string) => void;
   updateAvatar: (avatarUrl: string) => void;
+  changePassword: (email: string, newPassword: string) => { success: boolean; message: string };
+  getAllStoredAccounts: () => UserAccountMemory[];
+
+  // PWA Install
+  canInstallPwa: boolean;
+  isInstallModalOpen: boolean;
+  setIsInstallModalOpen: (open: boolean) => void;
+  promptPwaInstall: () => Promise<void>;
 
   // Stats
   stats: UserStats;
@@ -207,8 +229,79 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Navigation
   const [currentView, setCurrentView] = useState<ViewType>('inicio');
 
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstallPwa, setCanInstallPwa] = useState<boolean>(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstallPwa(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const promptPwaInstall = async () => {
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          setCanInstallPwa(false);
+          setDeferredPrompt(null);
+        }
+      } catch (err) {
+        console.warn('Erro ao disparar prompt de instalação PWA:', err);
+      }
+    } else {
+      setIsInstallModalOpen(true);
+    }
+  };
+
   // User auth state
   const [user, setUser] = useState<UserProfile | null>(() => {
+    if (isExplicitLoggedOut()) {
+      return null;
+    }
+
+    const activeEmail = getActiveEmail();
+    if (activeEmail) {
+      const acc = getAccountByEmail(activeEmail);
+      if (acc) {
+        return {
+          id: acc.id,
+          name: acc.name,
+          email: acc.email,
+          targetExam: acc.targetExam,
+          avatarUrl: acc.avatarUrl || '',
+          createdAt: acc.createdAt
+        };
+      }
+    }
+
+    const savedCreds = getSavedCredentials();
+    if (savedCreds && savedCreds.rememberMe && savedCreds.email) {
+      const acc = getAccountByEmail(savedCreds.email);
+      if (acc) {
+        setActiveEmail(acc.email);
+        return {
+          id: acc.id,
+          name: acc.name,
+          email: acc.email,
+          targetExam: acc.targetExam,
+          avatarUrl: acc.avatarUrl || '',
+          createdAt: acc.createdAt
+        };
+      }
+    }
+
     const saved = localStorage.getItem('nextenf_user_session');
     if (saved) {
       try {
@@ -220,13 +313,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return null;
   });
 
-  // User Stats (defaults to ZERO for realistic fresh experience)
+  // User Stats (defaults to ZERO for realistic fresh experience, restores from user memory)
   const [stats, setStats] = useState<UserStats>(() => {
+    const activeEmail = getActiveEmail() || getSavedCredentials()?.email;
+    if (activeEmail) {
+      const acc = getAccountByEmail(activeEmail);
+      if (acc && acc.stats) {
+        return acc.stats;
+      }
+    }
+
     const saved = localStorage.getItem('nextenf_user_stats');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Cleanse phantom 0.3 if user has not completed actual cards or questions
         if (
           (!parsed.cardsReviewedCount || parsed.cardsReviewedCount === 0) &&
           (!parsed.questionsAnsweredCount || parsed.questionsAnsweredCount === 0) &&
@@ -246,6 +346,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationSettings>(() => {
+    const activeEmail = getActiveEmail() || getSavedCredentials()?.email;
+    if (activeEmail) {
+      const acc = getAccountByEmail(activeEmail);
+      if (acc && acc.notifications) {
+        return {
+          ...DEFAULT_NOTIFICATIONS,
+          ...acc.notifications,
+          scheduledReminders: acc.notifications.scheduledReminders || DEFAULT_SCHEDULED_REMINDERS
+        };
+      }
+    }
+
     const saved = localStorage.getItem('nextenf_notifications');
     if (saved) {
       try {
@@ -270,30 +382,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Daily goals state with automatic renewal if date has changed
   const [dailyGoals, setDailyGoals] = useState<DailyGoalItem[]>(() => {
     const today = getTodayDateKey();
-    const savedDate = localStorage.getItem('nextenf_daily_goals_date');
-    const saved = localStorage.getItem('nextenf_daily_goals');
+    const activeEmail = getActiveEmail() || getSavedCredentials()?.email;
+    let savedGoals: DailyGoalItem[] | null = null;
+    let savedDate: string | null = null;
+
+    if (activeEmail) {
+      const acc = getAccountByEmail(activeEmail);
+      if (acc && acc.dailyGoals && acc.dailyGoals.length > 0) {
+        savedGoals = acc.dailyGoals;
+        savedDate = acc.dailyGoalsDate || null;
+      }
+    }
+
+    if (!savedGoals) {
+      const savedDateRaw = localStorage.getItem('nextenf_daily_goals_date');
+      const savedRaw = localStorage.getItem('nextenf_daily_goals');
+      if (savedRaw) {
+        try {
+          savedGoals = JSON.parse(savedRaw);
+          savedDate = savedDateRaw;
+        } catch {
+          // ignore
+        }
+      }
+    }
 
     // If it is the exact same calendar day, preserve current checkbox states
-    if (saved && savedDate === today) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return DEFAULT_DAILY_GOALS;
-      }
+    if (savedGoals && savedDate === today) {
+      return savedGoals;
     }
 
     // New day detected or initial load: automatically renew the checklist!
     localStorage.setItem('nextenf_daily_goals_date', today);
-    if (saved) {
-      try {
-        const parsed: DailyGoalItem[] = JSON.parse(saved);
-        // Renew all goals by clearing completed status for the new day
-        const renewed = parsed.map(g => ({ ...g, completed: false }));
-        localStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
-        return renewed;
-      } catch {
-        return DEFAULT_DAILY_GOALS;
-      }
+    if (savedGoals) {
+      const renewed = savedGoals.map(g => ({ ...g, completed: false }));
+      localStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
+      return renewed;
     }
 
     return DEFAULT_DAILY_GOALS;
@@ -349,14 +473,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isSessionTracking, setIsSessionTracking] = useState<boolean>(true);
   const sessionAccruedRef = useRef<number>(0);
 
-  // Sync to localStorage
+  // Sync to database vault and localStorage
   useEffect(() => {
-    if (user) {
+    if (user?.email) {
       localStorage.setItem('nextenf_user_session', JSON.stringify(user));
+      // Save directly to the account memory database vault
+      updateActiveAccountData(user.email, {
+        name: user.name,
+        targetExam: user.targetExam,
+        avatarUrl: user.avatarUrl,
+        stats,
+        dailyGoals,
+        dailyGoalsDate,
+        notifications
+      });
     } else {
       localStorage.removeItem('nextenf_user_session');
     }
-  }, [user]);
+  }, [user, stats, dailyGoals, dailyGoalsDate, notifications]);
 
   useEffect(() => {
     localStorage.setItem('nextenf_user_stats', JSON.stringify(stats));
@@ -599,43 +733,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-const DEFAULT_ACCOUNT: RegisteredAccount = {
-  id: 'user_aluno',
-  email: 'aluno@nextenf.com.br',
-  password: '123',
-  name: 'Aluno NEXTENF',
-  targetExam: 'Concurso Técnico em Enfermagem / EBSERH',
-  avatarUrl: '',
-  createdAt: new Date().toISOString()
-};
+  // Database memory vault helpers
+  const getAllStoredAccounts = useCallback((): UserAccountMemory[] => {
+    return getAllAccounts();
+  }, []);
 
-const getRegisteredAccounts = (): RegisteredAccount[] => {
-  try {
-    const raw = localStorage.getItem('nextenf_registered_accounts');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return [DEFAULT_ACCOUNT];
-};
+  const changePassword = useCallback((email: string, newPassword: string) => {
+    return updateAccountPassword(email, newPassword);
+  }, []);
 
-  // Auth methods
-  const login = (email: string, password?: string): { success: boolean; message?: string } => {
+  // Auth methods connected to persistent database vault
+  const login = (email: string, password?: string, rememberMe = true): { success: boolean; message?: string } => {
     const normEmail = email.trim().toLowerCase();
-    const accounts = getRegisteredAccounts();
-    const account = accounts.find(a => a.email.toLowerCase() === normEmail);
+    const account = getAccountByEmail(normEmail);
 
     if (!account) {
       return {
         success: false,
-        message: 'E-mail não cadastrado. Acesse a aba "Cadastre-se" para registrar seu acesso.'
+        message: 'E-mail não encontrado no banco de dados. Cadastre sua conta na aba ao lado.'
       };
     }
 
-    if (password && account.password !== password) {
+    if (password && account.password !== password.trim()) {
       return {
         success: false,
         message: 'Senha incorreta. Verifique suas credenciais e tente novamente.'
@@ -651,6 +770,38 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
       createdAt: account.createdAt
     };
     setUser(sessionUser);
+    setActiveEmail(account.email);
+
+    if (rememberMe) {
+      setSavedCredentials({
+        email: account.email,
+        password: account.password,
+        rememberMe: true,
+        autoLogin: true
+      });
+    } else {
+      setSavedCredentials(null);
+    }
+
+    // Restore this student's specific stats, dailyGoals & notifications from their memory vault
+    if (account.stats) {
+      setStats(account.stats);
+    }
+    if (account.dailyGoals && account.dailyGoals.length > 0) {
+      const today = getTodayDateKey();
+      if (account.dailyGoalsDate === today) {
+        setDailyGoals(account.dailyGoals);
+      } else {
+        setDailyGoals(account.dailyGoals.map(g => ({ ...g, completed: false })));
+      }
+    }
+    if (account.notifications) {
+      setNotifications({
+        ...DEFAULT_NOTIFICATIONS,
+        ...account.notifications,
+        scheduledReminders: account.notifications.scheduledReminders || DEFAULT_SCHEDULED_REMINDERS
+      });
+    }
 
     const entryNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setSessionEntryTime(entryNow);
@@ -666,30 +817,35 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
     email: string,
     password: string,
     name: string,
-    targetExam: string
+    targetExam: string,
+    rememberMe = true
   ): { success: boolean; message?: string } => {
     const normEmail = email.trim().toLowerCase();
-    const accounts = getRegisteredAccounts();
+    const existing = getAccountByEmail(normEmail);
 
-    if (accounts.some(a => a.email.toLowerCase() === normEmail)) {
+    if (existing) {
       return {
         success: false,
-        message: 'Este e-mail já está cadastrado. Faça login com sua senha.'
+        message: 'Este e-mail já está cadastrado no banco de dados. Faça login com sua senha.'
       };
     }
 
-    const newAccount: RegisteredAccount = {
+    const newAccount: UserAccountMemory = {
       id: 'user_' + Date.now(),
       email: normEmail,
       password: password.trim(),
       name: name.trim() || 'Estudante de Enfermagem',
       targetExam: targetExam.trim() || 'Concurso Técnico em Enfermagem / EBSERH',
       avatarUrl: '',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      stats: { ...DEFAULT_ZERO_STATS },
+      dailyGoals: [...DEFAULT_DAILY_GOALS],
+      dailyGoalsDate: getTodayDateKey(),
+      notifications: { ...DEFAULT_NOTIFICATIONS }
     };
 
-    const updated = [...accounts, newAccount];
-    localStorage.setItem('nextenf_registered_accounts', JSON.stringify(updated));
+    saveOrUpdateAccount(newAccount);
 
     const sessionUser: UserProfile = {
       id: newAccount.id,
@@ -699,7 +855,21 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
       avatarUrl: '',
       createdAt: newAccount.createdAt
     };
+
     setUser(sessionUser);
+    setActiveEmail(newAccount.email);
+    setStats({ ...DEFAULT_ZERO_STATS });
+    setDailyGoals([...DEFAULT_DAILY_GOALS]);
+    setNotifications({ ...DEFAULT_NOTIFICATIONS });
+
+    if (rememberMe) {
+      setSavedCredentials({
+        email: newAccount.email,
+        password: newAccount.password,
+        rememberMe: true,
+        autoLogin: true
+      });
+    }
 
     const entryNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setSessionEntryTime(entryNow);
@@ -707,8 +877,6 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
     setSessionActiveSeconds(0);
     sessionAccruedRef.current = 0;
 
-    // A brand new user starts 100% zerado
-    resetAllStatsToZero();
     setCurrentView('inicio');
     return { success: true };
   };
@@ -722,6 +890,17 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
     const exitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     localStorage.setItem('nextenf_last_exit_time', exitTime);
     setSessionLastExitTime(exitTime);
+
+    if (user?.email) {
+      updateActiveAccountData(user.email, {
+        stats,
+        dailyGoals,
+        dailyGoalsDate,
+        notifications
+      });
+    }
+
+    setActiveEmail(null);
     setUser(null);
     localStorage.removeItem('nextenf_user_session');
   };
@@ -736,18 +915,11 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
       avatarUrl: resolvedAvatar
     };
     setUser(updated);
-    try {
-      const accounts = getRegisteredAccounts();
-      const idx = accounts.findIndex(a => a.id === user.id || a.email.toLowerCase() === user.email.toLowerCase());
-      if (idx !== -1) {
-        accounts[idx].name = name;
-        accounts[idx].targetExam = targetExam;
-        accounts[idx].avatarUrl = resolvedAvatar;
-        localStorage.setItem('nextenf_registered_accounts', JSON.stringify(accounts));
-      }
-    } catch {
-      // ignore
-    }
+    updateActiveAccountData(user.email, {
+      name,
+      targetExam,
+      avatarUrl: resolvedAvatar
+    });
   };
 
   const updateAvatar = (avatarUrl: string) => {
@@ -757,16 +929,9 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
       avatarUrl
     };
     setUser(updated);
-    try {
-      const accounts = getRegisteredAccounts();
-      const idx = accounts.findIndex(a => a.id === user.id || a.email.toLowerCase() === user.email.toLowerCase());
-      if (idx !== -1) {
-        accounts[idx].avatarUrl = avatarUrl;
-        localStorage.setItem('nextenf_registered_accounts', JSON.stringify(accounts));
-      }
-    } catch {
-      // ignore
-    }
+    updateActiveAccountData(user.email, {
+      avatarUrl
+    });
   };
 
   // Reset to realistic ZERO
@@ -1306,6 +1471,12 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
         logout,
         updateProfile,
         updateAvatar,
+        changePassword,
+        getAllStoredAccounts,
+        canInstallPwa,
+        isInstallModalOpen,
+        setIsInstallModalOpen,
+        promptPwaInstall,
         stats,
         overallProgressPercentage,
         resetAllStatsToZero,

@@ -45,9 +45,22 @@ export const SuporteView: React.FC = () => {
   ];
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText(SUPPORT_EMAIL);
-    setCopiedEmail(true);
-    setTimeout(() => setCopiedEmail(false), 2500);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(SUPPORT_EMAIL);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = SUPPORT_EMAIL;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2500);
+    } catch {
+      // fallback
+    }
   };
 
   const handleSubmitTicket = (e: React.FormEvent) => {
