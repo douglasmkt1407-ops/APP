@@ -9,6 +9,7 @@ import { QuestoesView } from './components/views/QuestoesView';
 import { ResumosView } from './components/views/ResumosView';
 import { ChecklistView } from './components/views/ChecklistView';
 import { ProgressoView } from './components/views/ProgressoView';
+import { ModoFocoView } from './components/views/ModoFocoView';
 import { SprintView } from './components/views/SprintView';
 import { ConfiguracoesView } from './components/views/ConfiguracoesView';
 import { SuporteView } from './components/views/SuporteView';
@@ -36,6 +37,8 @@ const MainContent: React.FC = () => {
         return <ChecklistView />;
       case 'progresso':
         return <ProgressoView />;
+      case 'foco':
+        return <ModoFocoView />;
       case 'sprint':
         return <SprintView />;
       case 'configuracoes':

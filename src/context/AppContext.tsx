@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
   ViewType,
   UserProfile,
@@ -44,8 +44,10 @@ interface AppContextType {
   stats: UserStats;
   overallProgressPercentage: number;
   resetAllStatsToZero: () => void;
+  resetStudyTimeToZero: () => void;
   loadDemoStats: () => void;
   registerStudySession: (minutes?: number, label?: string) => void;
+  addStudySeconds: (seconds: number) => void;
 
   // Flashcards
   flashcards: Flashcard[];
@@ -94,6 +96,14 @@ interface AppContextType {
 
   // Quick navigation helper
   navigateToWithParams: (view: ViewType, params?: { category?: string; simuladoId?: number; summaryId?: string }) => void;
+
+  // Automated Presence & Session Tracking (Entrada e Saída)
+  sessionEntryTime: string;
+  sessionLastExitTime: string;
+  sessionActiveSeconds: number;
+  isSessionTracking: boolean;
+  toggleSessionTracking: () => void;
+  formatDurationHHMMSS: (totalSeconds: number) => string;
 }
 
 const getTodayDateKey = (): string => {
@@ -111,8 +121,9 @@ const updateStudyTimeInStats = (
   const today = getTodayDateKey();
   const currentHistory = prev.dailyStudyHistory || {};
   const currentTodayHours = currentHistory[today] || 0;
-  const newTodayHours = Number((currentTodayHours + addedHours).toFixed(2));
-  const newTotalHours = Number((prev.studyTimeHours + addedHours).toFixed(2));
+  // Use 4 decimal places so that every 1 minute (+0.0167h) is accurately recorded without rounding truncation
+  const newTodayHours = Number((currentTodayHours + addedHours).toFixed(4));
+  const newTotalHours = Number((prev.studyTimeHours + addedHours).toFixed(4));
   const isNewDay = prev.lastStudyDate !== today;
   const newDays = isNewDay ? Math.max(1, prev.consecutiveDays + 1) : Math.max(1, prev.consecutiveDays);
 
@@ -214,7 +225,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('nextenf_user_stats');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Cleanse phantom 0.3 if user has not completed actual cards or questions
+        if (
+          (!parsed.cardsReviewedCount || parsed.cardsReviewedCount === 0) &&
+          (!parsed.questionsAnsweredCount || parsed.questionsAnsweredCount === 0) &&
+          (!parsed.simuladosAttempts || parsed.simuladosAttempts.length === 0) &&
+          (parsed.studyTimeHours === 0.3 || parsed.studyTimeHours === 0.30)
+        ) {
+          parsed.studyTimeHours = 0.0;
+          parsed.dailyStudyHistory = {};
+        }
+        return parsed;
       } catch {
         return DEFAULT_ZERO_STATS;
       }
@@ -310,6 +332,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // In-app alert notification
   const [inAppNotification, setInAppNotification] = useState<{ title: string; body: string } | null>(null);
 
+  // Automated Presence & Session Tracking (Entrada e Saída)
+  const [sessionEntryTime, setSessionEntryTime] = useState<string>(() => {
+    const existing = localStorage.getItem('nextenf_current_entry_time');
+    if (existing) return existing;
+    const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    localStorage.setItem('nextenf_current_entry_time', now);
+    return now;
+  });
+
+  const [sessionLastExitTime, setSessionLastExitTime] = useState<string>(() => {
+    return localStorage.getItem('nextenf_last_exit_time') || '--:--';
+  });
+
+  const [sessionActiveSeconds, setSessionActiveSeconds] = useState<number>(0);
+  const [isSessionTracking, setIsSessionTracking] = useState<boolean>(true);
+  const sessionAccruedRef = useRef<number>(0);
+
   // Sync to localStorage
   useEffect(() => {
     if (user) {
@@ -363,6 +402,140 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       document.removeEventListener('visibilitychange', checkDailyRenewal);
     };
   }, []);
+
+  // Add real-time study seconds (from Modo Foco or active reading)
+  const addStudySeconds = useCallback((seconds: number) => {
+    if (seconds <= 0) return;
+    const hours = Number((seconds / 3600).toFixed(4));
+    setStats(prev => {
+      const timeUpdate = updateStudyTimeInStats(prev, hours);
+      return {
+        ...prev,
+        ...timeUpdate
+      };
+    });
+  }, []);
+
+  // Reset study time specifically to zero
+  const resetStudyTimeToZero = useCallback(() => {
+    const today = getTodayDateKey();
+    setSessionActiveSeconds(0);
+    sessionAccruedRef.current = 0;
+    setStats(prev => {
+      const updatedHistory = { ...(prev.dailyStudyHistory || {}) };
+      delete updatedHistory[today];
+      const updated: UserStats = {
+        ...prev,
+        studyTimeHours: 0.0,
+        dailyStudyHistory: updatedHistory
+      };
+      localStorage.setItem('nextenf_user_stats', JSON.stringify(updated));
+      return updated;
+    });
+
+    setInAppNotification({
+      title: '⏱️ Tempo de Estudo Zerado',
+      body: 'O tempo estudado foi redefinido para 0.0h com sucesso.'
+    });
+
+    if (notifications.soundAlerts) {
+      playAlertSound();
+    }
+  }, [notifications.soundAlerts]);
+
+  // Toggle automated presence tracking
+  const toggleSessionTracking = useCallback(() => {
+    setIsSessionTracking(prev => {
+      const next = !prev;
+      if (!next && sessionAccruedRef.current > 0) {
+        const remaining = sessionAccruedRef.current;
+        sessionAccruedRef.current = 0;
+        addStudySeconds(remaining);
+      }
+      return next;
+    });
+  }, [addStudySeconds]);
+
+  // Format seconds to HH:MM:SS
+  const formatDurationHHMMSS = useCallback((totalSeconds: number): string => {
+    if (!totalSeconds || totalSeconds < 0) return '00:00:00';
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }, []);
+
+  // Automated presence timer: ticks every 1 second, and every 60 seconds (1 minute of real time) increments the studied time
+  useEffect(() => {
+    if (!user || !isSessionTracking) return;
+
+    const interval = setInterval(() => {
+      setSessionActiveSeconds(prev => prev + 1);
+      sessionAccruedRef.current += 1;
+
+      // Exactly every 60 seconds (1 minute de tempo real), adiciona 1 minuto ao tempo estudado
+      if (sessionAccruedRef.current >= 60) {
+        const toAdd = sessionAccruedRef.current;
+        sessionAccruedRef.current = 0;
+        addStudySeconds(toAdd);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [user, isSessionTracking, addStudySeconds]);
+
+  // Handle browser tab close, unmount and visibility changes to record exact Horário de Saída
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const exitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      localStorage.setItem('nextenf_last_exit_time', exitTime);
+
+      if (sessionAccruedRef.current > 0) {
+        const remainingHours = Number((sessionAccruedRef.current / 3600).toFixed(4));
+        sessionAccruedRef.current = 0;
+        try {
+          const rawStats = localStorage.getItem('nextenf_user_stats');
+          if (rawStats) {
+            const parsed: UserStats = JSON.parse(rawStats);
+            const today = getTodayDateKey();
+            const history = parsed.dailyStudyHistory || {};
+            const updatedTotal = Number((parsed.studyTimeHours + remainingHours).toFixed(4));
+            const updatedToday = Number(((history[today] || 0) + remainingHours).toFixed(4));
+            parsed.studyTimeHours = Math.max(0, updatedTotal);
+            parsed.dailyStudyHistory = { ...history, [today]: Math.max(0, updatedToday) };
+            localStorage.setItem('nextenf_user_stats', JSON.stringify(parsed));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        const exitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        localStorage.setItem('nextenf_last_exit_time', exitTime);
+        setSessionLastExitTime(exitTime);
+
+        if (sessionAccruedRef.current > 0) {
+          const toAdd = sessionAccruedRef.current;
+          sessionAccruedRef.current = 0;
+          addStudySeconds(toAdd);
+        }
+      } else if (document.visibilityState === 'visible') {
+        const lastExit = localStorage.getItem('nextenf_last_exit_time');
+        if (lastExit) setSessionLastExitTime(lastExit);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [addStudySeconds]);
 
   // Sync flashcards status when stats change
   useEffect(() => {
@@ -478,6 +651,13 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
       createdAt: account.createdAt
     };
     setUser(sessionUser);
+
+    const entryNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setSessionEntryTime(entryNow);
+    localStorage.setItem('nextenf_current_entry_time', entryNow);
+    setSessionActiveSeconds(0);
+    sessionAccruedRef.current = 0;
+
     setCurrentView('inicio');
     return { success: true };
   };
@@ -521,6 +701,12 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
     };
     setUser(sessionUser);
 
+    const entryNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setSessionEntryTime(entryNow);
+    localStorage.setItem('nextenf_current_entry_time', entryNow);
+    setSessionActiveSeconds(0);
+    sessionAccruedRef.current = 0;
+
     // A brand new user starts 100% zerado
     resetAllStatsToZero();
     setCurrentView('inicio');
@@ -528,6 +714,14 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
   };
 
   const logout = () => {
+    if (sessionAccruedRef.current > 0) {
+      const remaining = sessionAccruedRef.current;
+      sessionAccruedRef.current = 0;
+      addStudySeconds(remaining);
+    }
+    const exitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    localStorage.setItem('nextenf_last_exit_time', exitTime);
+    setSessionLastExitTime(exitTime);
     setUser(null);
     localStorage.removeItem('nextenf_user_session');
   };
@@ -602,6 +796,8 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
     setStats(freshZero);
     setDailyGoals(freshGoals);
     setDailyGoalsDate(today);
+    setSessionActiveSeconds(0);
+    sessionAccruedRef.current = 0;
 
     // Reset flashcards status to new
     setFlashcards(INITIAL_FLASHCARDS.map(card => ({ ...card, status: 'new' })));
@@ -827,7 +1023,7 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
   };
 
   // Direct study session logger (e.g., from ProgressoView)
-  const registerStudySession = (minutes: number = 15, label: string = 'Sessão de Estudo') => {
+  const registerStudySession = useCallback((minutes: number = 15, label: string = 'Sessão de Estudo') => {
     const hours = Number((minutes / 60).toFixed(2));
     setStats(prev => {
       const timeUpdate = updateStudyTimeInStats(prev, hours);
@@ -845,7 +1041,7 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
     if (notifications.soundAlerts) {
       playAlertSound();
     }
-  };
+  }, [notifications.soundAlerts]);
 
   const addDailyGoal = (text: string, category: string = 'Meta Pessoal') => {
     if (!text.trim()) return;
@@ -1113,8 +1309,10 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
         stats,
         overallProgressPercentage,
         resetAllStatsToZero,
+        resetStudyTimeToZero,
         loadDemoStats,
         registerStudySession,
+        addStudySeconds,
         flashcards,
         activeCategory,
         setActiveCategory,
@@ -1148,7 +1346,13 @@ const getRegisteredAccounts = (): RegisteredAccount[] => {
         triggerScheduledReminderNotification,
         inAppNotification,
         dismissInAppNotification,
-        navigateToWithParams
+        navigateToWithParams,
+        sessionEntryTime,
+        sessionLastExitTime,
+        sessionActiveSeconds,
+        isSessionTracking,
+        toggleSessionTracking,
+        formatDurationHHMMSS
       }}
     >
       {children}

@@ -23,7 +23,11 @@ export const InicioView: React.FC = () => {
     simulados,
     summaries,
     resetAllStatsToZero,
-    loadDemoStats
+    loadDemoStats,
+    sessionEntryTime,
+    sessionActiveSeconds,
+    isSessionTracking,
+    formatDurationHHMMSS
   } = useApp();
 
   return (
@@ -114,6 +118,14 @@ export const InicioView: React.FC = () => {
             </button>
 
             <button
+              onClick={() => setCurrentView('foco')}
+              className="px-5 py-3 rounded-full bg-[#000000] hover:bg-neutral-900 border border-[#00E5A3]/60 text-[#00E5A3] font-bold text-sm flex items-center gap-2 shadow-[0_0_20px_rgba(0,229,163,0.25)] transition-all cursor-pointer transform hover:-translate-y-0.5"
+            >
+              <Clock className="w-4 h-4 text-[#00E5A3]" />
+              <span>Modo Foco</span>
+            </button>
+
+            <button
               onClick={() => setCurrentView('questoes')}
               className="px-5 py-3 rounded-full bg-[#0F2238] hover:bg-[#162D4A] border border-[#1E3A5F] text-slate-200 font-semibold text-sm flex items-center gap-2 transition-all cursor-pointer"
             >
@@ -183,21 +195,41 @@ export const InicioView: React.FC = () => {
           <p className="text-xs font-medium text-slate-400 mt-1">Dias consecutivos</p>
         </div>
 
-        {/* Stat 4: Tempo de estudo */}
+        {/* Stat 4: Tempo de estudo (Gira sozinho em tempo real) */}
         <div
           onClick={() => setCurrentView('progresso')}
-          className="bg-[#091526] border border-[#142A46] hover:border-[#00E5A3]/50 rounded-2xl p-5 transition-all duration-200 cursor-pointer group shadow-lg"
+          className="bg-[#091526] border border-[#142A46] hover:border-[#00E5A3]/50 rounded-2xl p-5 transition-all duration-200 cursor-pointer group shadow-lg relative overflow-hidden"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="w-10 h-10 rounded-xl bg-[#0F2642] flex items-center justify-center text-[#00E5A3] group-hover:bg-[#00E5A3]/10 transition-colors">
-              <Clock className="w-5 h-5" />
+              <Clock
+                className={`w-5 h-5 ${
+                  isSessionTracking ? 'animate-spin [animation-duration:8s]' : ''
+                }`}
+              />
             </div>
-            <span className="text-[11px] font-semibold text-slate-400">Total</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00E5A3]/10 text-[10px] font-bold text-[#00E5A3]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00E5A3] animate-pulse" />
+              <span>{formatDurationHHMMSS(sessionActiveSeconds)}</span>
+            </div>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            {stats.studyTimeHours.toFixed(1)}h
+            {stats.studyTimeHours > 0
+              ? stats.studyTimeHours < 1
+                ? `${Math.round(stats.studyTimeHours * 60)} min`
+                : `${Math.floor(stats.studyTimeHours)}h ${Math.round((stats.studyTimeHours % 1) * 60) > 0 ? `${Math.round((stats.studyTimeHours % 1) * 60)}min` : ''}`
+              : '0 min'}
           </div>
-          <p className="text-xs font-medium text-slate-400 mt-1">Tempo de estudo</p>
+          <p className="text-xs font-medium text-slate-400 mt-1 flex items-center justify-between">
+            <span>
+              {stats.studyTimeHours > 0
+                ? stats.studyTimeHours < 1
+                  ? `${Math.round(stats.studyTimeHours * 60)} min acumulados`
+                  : `${stats.studyTimeHours.toFixed(1)}h acumuladas`
+                : 'Tempo de estudo'}
+            </span>
+            <span className="text-[10px] text-[#00E5A3] font-semibold">Entrada: {sessionEntryTime}</span>
+          </p>
         </div>
       </div>
 

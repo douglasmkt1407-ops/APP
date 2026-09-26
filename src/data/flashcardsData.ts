@@ -97,7 +97,7 @@ export const INITIAL_FLASHCARDS: Flashcard[] = [
     category: 'Fundamentos de Enfermagem',
     question: 'Qual a profundidade e recomendação de troca de cânula de traqueostomia com balonete (cuff)?',
     answer: 'A pressão do cuff deve ser mantida entre 20 a 30 cmH2O (ou 15-22 mmHg).',
-    keyMnemonic: 'Cuff ideal: 20 a 30 cmH2O para não necrozar traqueia',
+    keyMnemonic: 'Cuff ideal: 20 a 30 cmH2O para não necrosar a traqueia',
     explanation: 'Pressões acima de 30 cmH2O provocam isquemia na mucosa traqueal e estenose futura.',
     status: 'new'
   },
@@ -189,7 +189,7 @@ export const INITIAL_FLASHCARDS: Flashcard[] = [
     category: 'Farmacologia & Cálculos',
     question: 'Se a prescrição pede 20 UI de Insulina e só dispomos de seringa de 3 mL (onde 1 mL = 100 UI), quantos mL aspirar?',
     answer: '0,2 mL.',
-    keyMnemonic: '100 UI --- 1 mL \n 20 UI --- X mL -> X = 0,2 mL',
+    keyMnemonic: '100 UI está para 1 mL | 20 UI está para X mL -> X = 0,2 mL',
     explanation: 'Multiplicação cruzada: 100 * X = 20 * 1 -> X = 20/100 = 0,2 mL.',
     status: 'new'
   },
@@ -214,9 +214,9 @@ export const INITIAL_FLASHCARDS: Flashcard[] = [
   {
     id: 24,
     category: 'Farmacologia & Cálculos',
-    question: 'Qual o antídoto de emergência em intoxicações agudas por Opióides (Morfina, Fentanil)?',
+    question: 'Qual o antídoto de emergência em intoxicações agudas por Opioides (Morfina, Fentanil)?',
     answer: 'Naloxona (Narcan).',
-    keyMnemonic: 'Opióide -> Naloxona (reverte depressão respiratória)',
+    keyMnemonic: 'Opioides -> Naloxona (reverte depressão respiratória)',
     explanation: 'Age como antagonista competitivo puro dos receptores opioides no sistema nervoso central.',
     status: 'new'
   },
@@ -225,7 +225,7 @@ export const INITIAL_FLASHCARDS: Flashcard[] = [
     category: 'Farmacologia & Cálculos',
     question: 'Prescrição: Amoxicilina 250 mg. Temos suspensão de 125 mg / 5 mL. Quantos mL administrar?',
     answer: '10 mL.',
-    keyMnemonic: '125 mg --- 5 mL \n 250 mg --- X mL -> X = 10 mL',
+    keyMnemonic: '125 mg está para 5 mL | 250 mg está para X mL -> X = 10 mL',
     explanation: 'Como a dose prescrita é o dobro da apresentação (250 é 2x 125), o volume também dobra: 5 mL x 2 = 10 mL.',
     status: 'new'
   },
@@ -670,7 +670,7 @@ export const INITIAL_FLASHCARDS: Flashcard[] = [
   {
     id: 74,
     category: 'Biossegurança & Infecção',
-    question: 'Qual a janela de tempo máxima para início da Profilaxia Pós-Exposição (PEP) ao HIV após acidente pérfuro-cortante?',
+    question: 'Qual a janela de tempo máxima para início da Profilaxia Pós-Exposição (PEP) ao HIV após acidente perfurocortante?',
     answer: 'Preferencialmente nas primeiras 2 horas, com limite máximo de até 72 horas.',
     keyMnemonic: 'PEP HIV: Ideal < 2h | Limite máximo: 72h por 28 dias',
     explanation: 'Após 72 horas, o vírus já estabelece integração genômica e a profilaxia profilática perde eficácia.',
@@ -810,7 +810,7 @@ export const INITIAL_FLASHCARDS: Flashcard[] = [
     question: 'Qual a periodicidade de rastreamento do Câncer de Colo de Útero (Exame Papanicolau/Citopatológico)?',
     answer: 'Mulheres de 25 a 64 anos que já iniciaram atividade sexual: anualmente; após 2 exames normais consecutivos, a cada 3 anos.',
     keyMnemonic: 'Papanicolau: 25 a 64 anos. 2 anuais normais -> a cada 3 anos',
-    explanation: 'Método de excelência para detecção de lesões pré-cursoras causadas pelo HPV.',
+    explanation: 'Método de excelência para detecção de lesões precursoras causadas pelo HPV.',
     status: 'new'
   },
   {
@@ -986,6 +986,465 @@ export const INITIAL_FLASHCARDS: Flashcard[] = [
     answer: 'Até 6 a 8 horas mantido entre +2 °C e +8 °C.',
     keyMnemonic: 'Vacinas virais atenuadas liofilizadas duram poucas horas após abertas (máx 6-8h)',
     explanation: 'Após esse prazo a viabilidade dos vírus atenuados cai vertiginosamente e o frasco deve ser descartado.',
+    status: 'new'
+  },
+  // --- CARDS ADICIONAIS DE ALTO RENDIMENTO (+50 CARDS REVISADOS) ---
+  // Fundamentos de Enfermagem (109-115)
+  {
+    id: 109,
+    category: 'Fundamentos de Enfermagem',
+    question: 'Qual a principal diferença técnica e de indicação entre o Cateterismo Vesical de Alívio (CVA) e o de Demora (SVD)?',
+    answer: 'O CVA usa sonda sem balão (Nelaton) retirada logo após o esvaziamento; o SVD usa sonda com balão inflado (Foley) conectada a sistema fechado para drenagem contínua.',
+    keyMnemonic: 'CVA = Nelaton e saída imediata | SVD = Foley + Balonete com água destilada',
+    explanation: 'O CVA é indicado para retenção urinária aguda ou coleta asséptica única; o SVD para monitorização de débito urinário rigoroso ou pós-operatório.',
+    status: 'new'
+  },
+  {
+    id: 110,
+    category: 'Fundamentos de Enfermagem',
+    question: 'Na Punção Venosa Periférica (PVP), qual a relação entre o número do calibre (Gauge) do cateter flexível e o seu diâmetro interno?',
+    answer: 'A relação é inversamente proporcional: quanto MENOR o número do calibre (G), MAIOR o diâmetro da cânula.',
+    keyMnemonic: 'Menor número = Calibre mais grosso (14G e 16G para trauma/sangue; 22G e 24G para pediatria/veias frágeis)',
+    explanation: 'Cateteres 14G a 18G permitem infusão rápida de grandes volumes e hemoderivados em situações de choque e cirurgias.',
+    status: 'new'
+  },
+  {
+    id: 111,
+    category: 'Fundamentos de Enfermagem',
+    question: 'Como se define o Balanço Hídrico (BH) positivo e quais seus riscos clínicos para o paciente internado?',
+    answer: 'BH positivo ocorre quando o total de líquidos administrados (ganhos) supera o total de líquidos eliminados (perdas); o risco é sobrecarga volêmica e edema agudo de pulmão.',
+    keyMnemonic: 'Ganhos > Perdas = BH Positivo | Perdas > Ganhos = BH Negativo',
+    explanation: 'O cálculo soma todas as infusões parenterais, dietas e medicações, subtraindo diurese, drenos, vômitos e perdas insensíveis.',
+    status: 'new'
+  },
+  {
+    id: 112,
+    category: 'Fundamentos de Enfermagem',
+    question: 'Ao aspirar vias aéreas de um paciente traqueostomizado ou intubado, qual a sequência de sítios recomendada?',
+    answer: 'Primeiro aspira-se a cânula endotraqueal ou traqueostomia (via estéril); somente após isso aspiram-se a cavidade oral e o nariz.',
+    keyMnemonic: 'Tubo/Traqueo primeiro (estéril), depois orofaringe e narinas',
+    explanation: 'A orofaringe possui microbiota bacteriana colonizada densa; nunca se deve introduzir uma sonda previamente passada na boca dentro da traqueia.',
+    status: 'new'
+  },
+  {
+    id: 113,
+    category: 'Fundamentos de Enfermagem',
+    question: 'Qual a posição recomendada para a realização de Lavagem Gástrica em paciente com intoxicação exógena aguda?',
+    answer: 'Decúbito lateral esquerdo com a cabeceira rebaixada (posição de Trendelenburg ou declive).',
+    keyMnemonic: 'Lateral esquerdo + Leve declive (evita passagem do tóxico para o duodeno e broncoaspiração)',
+    explanation: 'Nessa posição, a curvatura maior do estômago fica posicionada inferiormente, retardando o esvaziamento para o piloro.',
+    status: 'new'
+  },
+  {
+    id: 114,
+    category: 'Fundamentos de Enfermagem',
+    question: 'Qual o cuidado primordial antes e após a administração de medicamentos por Sonda Nasoentérica (SNE)?',
+    answer: 'Lavar a sonda com 20 a 30 mL de água potável/filtrada antes e depois de cada medicamento para prevenir obstrução.',
+    keyMnemonic: 'Lavar a sonda sempre (flushing com 20-30 mL de água)',
+    explanation: 'Medicamentos não devem ser misturados diretamente na dieta enteral para evitar precipitação física e alteração da absorção farmacológica.',
+    status: 'new'
+  },
+  {
+    id: 115,
+    category: 'Fundamentos de Enfermagem',
+    question: 'Como é classificado o pulso arterial que se apresenta fraco, rápido e com amplitude diminuída, típico de choque hipovolêmico?',
+    answer: 'Pulso Filiforme.',
+    keyMnemonic: 'Filiforme = Rápido, fino como um fio e com amplitude muito reduzida, difícil de palpar',
+    explanation: 'Indica queda acentuada do volume sistólico/débito cardíaco e vasoconstrição periférica compensatória, característico de choque circulatório.',
+    status: 'new'
+  },
+  // Farmacologia & Cálculos (116-123)
+  {
+    id: 116,
+    category: 'Farmacologia & Cálculos',
+    question: 'No preparo de Penicilina Cristalina 5.000.000 UI, qual o volume ocupado pelo soluto em pó no frasco-ampola?',
+    answer: 'O pó ocupa 2 mL de volume.',
+    keyMnemonic: 'Penicilina 5 milhões: Pó = 2 mL | Adicionar 8 mL de diluente = Volume final de 10 mL',
+    explanation: 'Ao injetar 8 mL de água destilada, o volume total da solução atinge exatamente 10 mL (500.000 UI/mL).',
+    status: 'new'
+  },
+  {
+    id: 117,
+    category: 'Farmacologia & Cálculos',
+    question: 'No preparo de Penicilina Cristalina 10.000.000 UI, qual o volume ocupado pelo pó do soluto?',
+    answer: 'O pó ocupa 4 mL de volume.',
+    keyMnemonic: 'Penicilina 10 milhões: Pó = 4 mL | Adicionar 6 mL de diluente = Volume final de 10 mL',
+    explanation: 'Ao adicionar 6 mL de diluente, obtém-se 10 mL totais, correspondendo a 1.000.000 UI por mL.',
+    status: 'new'
+  },
+  {
+    id: 118,
+    category: 'Farmacologia & Cálculos',
+    question: 'Prescrição: Penicilina Cristalina 2.500.000 UI EV. Disponível frasco de 5.000.000 UI reconstituído para 10 mL totais. Quantos mL aspirar?',
+    answer: '5 mL.',
+    keyMnemonic: '5.000.000 UI está para 10 mL | 2.500.000 UI está para X mL -> X = 5 mL',
+    explanation: 'Como 2.500.000 UI é a metade de 5.000.000 UI, a resposta é exatamente a metade do volume total (10 / 2 = 5 mL).',
+    status: 'new'
+  },
+  {
+    id: 119,
+    category: 'Farmacologia & Cálculos',
+    question: 'Por que o Cloreto de Potássio a 19,1% (KCl) NUNCA pode ser administrado por via intravenosa direta (bolus puro)?',
+    answer: 'Porque provoca parada cardiorrespiratória imediata e irreversível em assistolia por hipercalemia fulminante.',
+    keyMnemonic: 'KCl em bolus MATA! Sempre infundir diluído e em bomba de infusão',
+    explanation: 'O KCl é uma medicação de alta vigilância (alta alerta); deve ser obrigatoriamente diluído em soluções compatíveis.',
+    status: 'new'
+  },
+  {
+    id: 120,
+    category: 'Farmacologia & Cálculos',
+    question: 'Qual cuidado de enfermagem antecede obrigatoriamente a administração de Digoxina oral ou venosa?',
+    answer: 'Aferir a Frequência Cardíaca apical por 1 minuto completo; se FC < 60 bpm no adulto, suspender a dose e notificar o médico.',
+    keyMnemonic: 'Digoxina: Ausculta apical 1 min. FC < 60 bpm = Não administrar!',
+    explanation: 'A digoxina tem efeito inotrópico positivo e cronotrópico negativo; sua toxicidade causa arritmias graves e visão amarelada (xantopsia).',
+    status: 'new'
+  },
+  {
+    id: 121,
+    category: 'Farmacologia & Cálculos',
+    question: 'Na aplicação subcutânea de Heparina de Baixo Peso Molecular (Enoxaparina), por que NÃO se deve aspirar nem massagear o local?',
+    answer: 'Aspirar e massagear rompe microvasos da derme e hipoderme, provocando dor local e extensos hematomas/equimoses subcutâneas.',
+    keyMnemonic: 'Enoxaparina/Clexane: Ângulo 90°, prega mantida, NÃO aspirar e NÃO massagear',
+    explanation: 'Deve-se manter a prega cutânea no abdômen anterolateral durante toda a injeção do fármaco.',
+    status: 'new'
+  },
+  {
+    id: 122,
+    category: 'Farmacologia & Cálculos',
+    question: 'Prescrição: SG 10% 500 mL. Disponível: Frasco de SG 5% 500 mL e ampolas de glicose 50% de 20 mL. Quantos gramas faltam e quantas ampolas adicionar?',
+    answer: 'Faltam 25 g de glicose pura, devendo-se adicionar 50 mL de glicose a 50% (2 ampolas e meia de 20 mL).',
+    keyMnemonic: 'SG 10% (500mL) = 50g | SG 5% (500mL) = 25g | Diferença = 25g (50 mL de glicose a 50%)',
+    explanation: 'Cada ampola de 20 mL a 50% contém 10g de glicose pura. Para fornecer os 25g faltantes, são necessários 50 mL (2,5 ampolas).',
+    status: 'new'
+  },
+  {
+    id: 123,
+    category: 'Farmacologia & Cálculos',
+    question: 'Qual o principal cuidado na infusão intravenosa contínua de Nitroprussiato de Sódio (Niprid)?',
+    answer: 'Proteger a solução da luz com capa e equipo fotoprotetor escuro opaco durante todo o período de infusão.',
+    keyMnemonic: 'Nitroprussiato de Sódio = Extremamente FOTOSSENSÍVEL! Capa protetora obrigatória',
+    explanation: 'A exposição à luz degrada a molécula de nitroprussiato liberando cianeto tóxico para a circulação sistêmica.',
+    status: 'new'
+  },
+  // Urgência & Emergência (124-130)
+  {
+    id: 124,
+    category: 'Urgência & Emergência',
+    question: 'Quais são as duas arritmias em parada cardiorrespiratória classificadas como NÃO CHOCÁVEIS?',
+    answer: 'Assistolia e Atividade Elétrica Sem Pulso (AESP).',
+    keyMnemonic: 'NÃO chocam: Assistolia e AESP. Conduta: RCP de alta qualidade + Epinefrina rápida',
+    explanation: 'Ao constatar assistolia, aplicar o protocolo da Linha Reta: checar cabos, ganhos do monitor e mudar derivações (C-A-G-A).',
+    status: 'new'
+  },
+  {
+    id: 125,
+    category: 'Urgência & Emergência',
+    question: 'Quais são as 5 causas reversíveis de PCR que começam com a letra H (5Hs)?',
+    answer: '1. Hipovolemia; 2. Hipóxia; 3. Hidrogênio/Acidose metabólica; 4. Hipo/Hipercalemia; 5. Hipotermia.',
+    keyMnemonic: '5Hs: Hipovolemia, Hipóxia, H+ (acidose), Hipo/Hiper K+, Hipotermia',
+    explanation: 'A identificação precoce da causa de base e seu tratamento específico é fundamental para o retorno da circulação espontânea (RCE).',
+    status: 'new'
+  },
+  {
+    id: 126,
+    category: 'Urgência & Emergência',
+    question: 'Quais são as 5 causas reversíveis de PCR que começam com a letra T (5Ts)?',
+    answer: '1. Tensão no tórax (Pneumotórax hipertensivo); 2. Tamponamento cardíaco; 3. Toxinas (intoxicações); 4. Trombose pulmonar (TEP maciço); 5. Trombose coronária (IAM com supra).',
+    keyMnemonic: '5Ts: Tensão tórax, Tamponamento, Toxinas, TEP, Trombose coronária',
+    explanation: 'Investigar esses fatores simultaneamente às compressões contínuas e administração de adrenalina.',
+    status: 'new'
+  },
+  {
+    id: 127,
+    category: 'Urgência & Emergência',
+    question: 'O que diferencia fundamentalmente a Cardioversão Elétrica Sincronizada da Desfibrilação?',
+    answer: 'A cardioversão sincroniza a descarga elétrica exatamente na onda R do ECG; a desfibrilação descarrega imediatamente em qualquer fase.',
+    keyMnemonic: 'Cardioversão = Sincronizada na onda R (para taquiarritmias com pulso) | Desfibrilação = Não sincronizada',
+    explanation: 'Sincronizar evita que o choque caia sobre a onda T (período vulnerável ventricular), o que precipitaria fibrilação ventricular.',
+    status: 'new'
+  },
+  {
+    id: 128,
+    category: 'Urgência & Emergência',
+    question: 'Qual a localização correta para aplicação de um torniquete tático em caso de hemorragia exsanguinante em membro?',
+    answer: 'De 5 a 7 centímetros acima da lesão, nunca diretamente sobre articulações (joelho ou cotovelo).',
+    keyMnemonic: '5 a 7 cm acima do sangramento. Anotar hora exata da colocação no torniquete!',
+    explanation: 'Deve ser apertado até a cessação completa do sangramento arterial e desaparecimento do pulso distal.',
+    status: 'new'
+  },
+  {
+    id: 129,
+    category: 'Urgência & Emergência',
+    question: 'Qual o tempo máximo recomendado pela Sociedade Brasileira de Cardiologia para realização do ECG de 12 derivações em paciente com dor torácica?',
+    answer: 'Até 10 minutos após a chegada ao serviço de emergência (tempo porta-ECG ≤ 10 min).',
+    keyMnemonic: 'Porta-ECG no infarto: máximo 10 minutos!',
+    explanation: 'A identificação imediata de supra de segmento ST define a necessidade de angioplastia coronária primária de urgência.',
+    status: 'new'
+  },
+  {
+    id: 130,
+    category: 'Urgência & Emergência',
+    question: 'Quais intervenções compõem o Pacote da Primeira Hora (Hour-1 Bundle) no tratamento da Sepse e Choque Séptico?',
+    answer: '1. Dosar lactato sérico; 2. Coletar hemoculturas antes de iniciar antimicrobianos; 3. Iniciar antibiótico de amplo espectro; 4. Infundir cristaloides (30 mL/kg para hipotensão/lactato ≥ 4); 5. Iniciar vasopressor se hipotenso.',
+    keyMnemonic: 'Sepse 1ª hora: Lactato + Hemoculturas + Antibiótico + Ringer/SF + Noradrenalina',
+    explanation: 'A cada hora de atraso no início do antibiótico adequado, a mortalidade hospitalar por choque séptico aumenta cerca de 7 a 8%.',
+    status: 'new'
+  },
+  // SUS & Legislação (131-135)
+  {
+    id: 131,
+    category: 'SUS & Legislação',
+    question: 'De acordo com a Política Nacional de Atenção Básica (PNAB - Portaria nº 2.436/2017), qual é a estratégia prioritária para expansão da Atenção Básica?',
+    answer: 'A Estratégia Saúde da Família (ESF).',
+    keyMnemonic: 'ESF = Modelo prioritário de reorganização da Atenção Básica no Brasil',
+    explanation: 'Composta por equipe multiprofissional com médico, enfermeiro, técnico/auxiliar de enfermagem e agentes comunitários de saúde (ACS).',
+    status: 'new'
+  },
+  {
+    id: 132,
+    category: 'SUS & Legislação',
+    question: 'Quais são os Princípios ORGANIZATIVOS (Operacionais) do SUS previstos na Constituição e Lei 8.080/90?',
+    answer: '1. Descentralização com comando único; 2. Regionalização e Hierarquização; 3. Participação da Comunidade.',
+    keyMnemonic: 'Organizativos: Descentralização, Regionalização, Hierarquização e Controle Social',
+    explanation: 'Diferenciam-se dos princípios doutrinários (Universalidade, Equidade e Integralidade).',
+    status: 'new'
+  },
+  {
+    id: 133,
+    category: 'SUS & Legislação',
+    question: 'Qual a diferença jurídica e conceitual entre Imprudência, Negligência e Imperícia na prática da enfermagem?',
+    answer: 'Imprudência: agir com precipitação/sem cautela (ação desastrada); Negligência: omitir cuidado devido (inação/descuido); Imperícia: agir sem conhecimento técnico/habilidade.',
+    keyMnemonic: 'Imprudência = Faz o que não devia | Negligência = Deixa de fazer o que devia | Imperícia = Falta de perícia técnica',
+    explanation: 'As três modalidades caracterizam culpa profissional suscetível a processos éticos, civis e criminais.',
+    status: 'new'
+  },
+  {
+    id: 134,
+    category: 'SUS & Legislação',
+    question: 'O dever de Sigilo Profissional do profissional de enfermagem cessa com a morte do paciente?',
+    answer: 'NÃO! O sigilo permanece mesmo após a morte do paciente.',
+    keyMnemonic: 'Sigilo profissional na enfermagem continua mesmo após a morte do paciente!',
+    explanation: 'Exceções somente por justa causa, dever legal ou autorização expressa por escrito do paciente/representante.',
+    status: 'new'
+  },
+  {
+    id: 135,
+    category: 'SUS & Legislação',
+    question: 'Qual a competência legal do Técnico de Enfermagem em Unidades de Terapia Intensiva (UTI) segundo a Lei 7.498/86?',
+    answer: 'Executar ações assistenciais de enfermagem sob a supervisão, orientação e acompanhamento direto do Enfermeiro.',
+    keyMnemonic: 'Técnico na UTI atua sempre sob supervisão direta do Enfermeiro',
+    explanation: 'Pacientes graves sob risco iminente de morte exigem cuidados diretos do Enfermeiro com auxílio da equipe técnica.',
+    status: 'new'
+  },
+  // Biossegurança & Infecção (136-140)
+  {
+    id: 136,
+    category: 'Biossegurança & Infecção',
+    question: 'Quais EPIs são obrigatórios nas Precauções de Contato (ex: infecção por KPC ou bactérias multirresistentes)?',
+    answer: 'Avental de manga longa (capote) e Luvas de procedimento para qualquer contato com o paciente ou superfície do leito.',
+    keyMnemonic: 'Contato = Capote + Luvas antes de entrar no leito; retirar antes de sair',
+    explanation: 'Além dos EPIs, preconiza-se quarto privativo ou coorte e termômetro/estetoscópio de uso exclusivo do paciente.',
+    status: 'new'
+  },
+  {
+    id: 137,
+    category: 'Biossegurança & Infecção',
+    question: 'Qual o tempo e técnica preconizada para o preparo cirúrgico das mãos (degermação) da equipe operatória?',
+    answer: 'Duração de 3 a 5 minutos na primeira cirurgia (e 2 a 3 minutos nas subsequentes), das mãos até os cotovelos.',
+    keyMnemonic: 'Degermação cirúrgica: 3 a 5 minutos. Mãos mantidas sempre ACIMA dos cotovelos',
+    explanation: 'Usa-se antisséptico degermante (clorexidina 2% ou PVPI degermante) com escova macia apenas nas unhas.',
+    status: 'new'
+  },
+  {
+    id: 138,
+    category: 'Biossegurança & Infecção',
+    question: 'Qual a cor e identificação do saco de lixo obrigatório para resíduos infectantes do Grupo A (sangue, secreções, curativos)?',
+    answer: 'Saco plástico branco leitoso identificado com o símbolo internacional de risco biológico e descrição de infectante.',
+    keyMnemonic: 'Grupo A (Infectante) = Saco Branco Leitoso com símbolo biológico',
+    explanation: 'Os resíduos comuns (Grupo D) utilizam saco preto; perfurocortantes (Grupo E) caixa amarela rígida.',
+    status: 'new'
+  },
+  {
+    id: 139,
+    category: 'Biossegurança & Infecção',
+    question: 'Qual o antisséptico de primeira escolha recomendado pela ANVISA e CDC para inserção e curativo de Cateter Venoso Central (CVC)?',
+    answer: 'Solução alcoólica de Gliconato de Clorexidina a 0,5% a 2%.',
+    keyMnemonic: 'Prevenção de infecção em cateter = Clorexidina Alcoólica 0,5-2%',
+    explanation: 'Possui rápido início de ação e expressivo efeito residual prolongado na pele em relação ao álcool e PVPI.',
+    status: 'new'
+  },
+  {
+    id: 140,
+    category: 'Biossegurança & Infecção',
+    question: 'A cada quanto tempo deve ser trocado o equipo de infusão parenteral contínua convencional segundo normas da ANVISA?',
+    answer: 'Em infusões contínuas convencionais sem sangue ou lipídios: a cada 96 horas (ou imediatamente se houver contaminação/suspeita).',
+    keyMnemonic: 'Equipos comuns: até 96h | Nutrição parenteral com lipídios/propofol: 24h | Hemoderivados: a cada bolsa',
+    explanation: 'A padronização previne a formação de biofilmes bacterianos e infecções de corrente sanguínea.',
+    status: 'new'
+  },
+  // Saúde da Mulher & Criança (141-147)
+  {
+    id: 141,
+    category: 'Saúde da Mulher & Criança',
+    question: 'Quais são considerados Sinais de Certeza da Gravidez no exame físico e complementar?',
+    answer: '1. Ausculta dos Batimentos Cardiofetais (BCF); 2. Percepção dos movimentos fetais pelo examinador; 3. Visualização do feto na ultrassonografia.',
+    keyMnemonic: 'Sinais de Certeza: Ouvir BCF, Sentir o feto mexer e Ver no Ultrassom',
+    explanation: 'Atraso menstrual, náuseas e sonolência são sinais de presunção; aumento uterino é sinal de probabilidade.',
+    status: 'new'
+  },
+  {
+    id: 142,
+    category: 'Saúde da Mulher & Criança',
+    question: 'Qual é a faixa considerada de normalidade para a Frequência Cardíaca Fetal (BCF) em repouso?',
+    answer: 'Entre 110 e 160 batimentos por minuto (bpm).',
+    keyMnemonic: 'BCF normal = 110 a 160 bpm (< 110 = Bradicardia fetal; > 160 = Taquicardia fetal)',
+    explanation: 'Valores sustentados fora desse intervalo sugerem hipóxia e sofrimento fetal agudo.',
+    status: 'new'
+  },
+  {
+    id: 143,
+    category: 'Saúde da Mulher & Criança',
+    question: 'Em qual semana de gestação a Altura Uterina (AFU) tipicamente coincide com o nível da cicatriz umbilical da gestante?',
+    answer: 'Na 20ª semana de gestação.',
+    keyMnemonic: '20 semanas = Fundo de útero na cicatriz umbilical (aproximadamente 20 cm)',
+    explanation: 'A partir da 20ª até a 32ª semana, a medida em centímetros da sínfise púbica ao fundo uterino aproxima-se da idade gestacional.',
+    status: 'new'
+  },
+  {
+    id: 144,
+    category: 'Saúde da Mulher & Criança',
+    question: 'Quais são os 4 períodos clínicos do parto e o que ocorre no 4º período (Período de Greenberg)?',
+    answer: '1º Dilatação; 2º Expulsivo; 3º Secundamento (dequitação placentária); 4º Período de Greenberg (primeira hora após o parto).',
+    keyMnemonic: 'Dilatação -> Expulsivo -> Secundamento -> Greenberg (1h pós-parto: atonia e hemostasia)',
+    explanation: 'A 1ª hora após o desprendimento da placenta é o período crítico de maior ocorrência de hemorragia pós-parto por atonia uterina.',
+    status: 'new'
+  },
+  {
+    id: 145,
+    category: 'Saúde da Mulher & Criança',
+    question: 'Qual a recomendação da vacina dTpa (Difteria, Tétano e Coqueluche acelular) para todas as gestantes no SUS?',
+    answer: 'Uma dose a cada gestação, a partir da 20ª semana gestacional (ou puerpério imediato se não vacinada).',
+    keyMnemonic: 'dTpa em toda gestação a partir da 20ª semana (transfere anticorpos ao bebê)',
+    explanation: 'A passagem transplacentária de anticorpos contra Bordetella pertussis protege o recém-nascido nos primeiros meses antes da vacina pentavalente.',
+    status: 'new'
+  },
+  {
+    id: 146,
+    category: 'Saúde da Mulher & Criança',
+    question: 'Qual a principal característica temporal que diferencia a Icterícia Neonatal Fisiológica da Patológica?',
+    answer: 'A icterícia fisiológica surge DEPOIS das primeiras 24 horas de vida (2º ao 3º dia); a icterícia patológica surge NAS primeiras 24 horas de vida.',
+    keyMnemonic: 'Icterícia nas primeiras 24h = PATOLÓGICA! Após 24h = Fisiológica (imaturidade hepática)',
+    explanation: 'Icterícia precoce nas primeiras 24h decorre habitualmente de incompatibilidade sanguínea materno-fetal (Rh ou ABO).',
+    status: 'new'
+  },
+  {
+    id: 147,
+    category: 'Saúde da Mulher & Criança',
+    question: 'Quais os 3 cuidados de enfermagem mais importantes para o recém-nascido sob Fototerapia?',
+    answer: '1. Proteção ocular com venda opaca/fotoprotetora; 2. Máxima exposição corporal (manter apenas fralda); 3. Monitoramento térmico e aumento da oferta hídrica/aleitamento.',
+    keyMnemonic: 'Fototerapia: Proteger os olhos com venda opaca + Hidratação + Despir o RN',
+    explanation: 'A luz fotodegrada a bilirrubina indireta em lumirrubina hidrossolúvel, mas pode provocar lesão retiniana irreversível se os olhos estiverem desprotegidos.',
+    status: 'new'
+  },
+  // Médico-Cirúrgica (148-152)
+  {
+    id: 148,
+    category: 'Médico-Cirúrgica',
+    question: 'Qual a diferença entre a cicatrização de feridas por Primeira Intenção e por Segunda Intenção?',
+    answer: 'Primeira intenção: bordas aproximadas por sutura cirúrgica, perda tecidual mínima e pouca formação de cicatriz; Segunda intenção: bordas afastadas com cicatrização por granulação de baixo para cima.',
+    keyMnemonic: '1ª intenção = Fechada com ponto | 2ª intenção = Aberta cicatrizando de dentro para fora',
+    explanation: 'Feridas infectadas ou com grande perda tecidual cicatrizam por 2ª intenção para evitar abscessos fechados.',
+    status: 'new'
+  },
+  {
+    id: 149,
+    category: 'Médico-Cirúrgica',
+    question: 'Para qual condição clínica a Bota de Unna é indicada e qual a sua contraindicação formal?',
+    answer: 'Indicada no tratamento de Úlceras Venosas crônicas dos membros inferiores; CONTRAINDICADA em úlceras de etiologia puramente arterial (isquemia periférica).',
+    keyMnemonic: 'Bota de Unna = Para úlcera VENOSA. Proibida na insuficiência arterial grave!',
+    explanation: 'A compressão inelástica da bota de Unna melhora o retorno venoso, mas colapsaria a circulação arterial em membros isquêmicos.',
+    status: 'new'
+  },
+  {
+    id: 150,
+    category: 'Médico-Cirúrgica',
+    question: 'Quais são os 4 Tempos Cirúrgicos Fundamentais em ordem de execução durante o ato operatório?',
+    answer: '1. Diérese (incisão/corte dos tecidos); 2. Hemostasia (parada de sangramentos); 3. Exérese (remoção/ressecção/tempo principal); 4. Síntese (aproximação e sutura).',
+    keyMnemonic: 'Tempos Cirúrgicos: Diérese -> Hemostasia -> Exérese -> Síntese',
+    explanation: 'O instrumentador organiza a mesa cirúrgica respeitando rigidamente a disposição dos tempos cirúrgicos.',
+    status: 'new'
+  },
+  {
+    id: 151,
+    category: 'Médico-Cirúrgica',
+    question: 'O que define o paciente classificado como ASA I e ASA II na avaliação de risco anestésico pré-operatório?',
+    answer: 'ASA I: Paciente hígido, saudável, sem comorbidades; ASA II: Paciente com doença sistêmica leve bem controlada (ex: hipertensão ou diabetes controlada, tabagismo).',
+    keyMnemonic: 'ASA I = Saudável | ASA II = Doença sistêmica leve sem limitação funcional',
+    explanation: 'ASA III apresenta doença sistêmica grave com limitação; ASA IV doença com risco constante de morte.',
+    status: 'new'
+  },
+  {
+    id: 152,
+    category: 'Médico-Cirúrgica',
+    question: 'Quais as principais intervenções de enfermagem para profilaxia de Trombose Venosa Profunda (TVP) no pós-operatório?',
+    answer: 'Estimular a deambulação precoce, exercícios ativos e passivos de flexão e extensão plantar no leito, meias elásticas de compressão graduada e compressão pneumática intermitente.',
+    keyMnemonic: 'Prevenção de TVP: Levantar cedo + Meias compressivas + Exercícios dos pés',
+    explanation: 'A estase venosa prolongada pela imobilização associada à hipercoagulabilidade pós-cirúrgica é o gatilho da tríade de Virchow.',
+    status: 'new'
+  },
+  // Saúde Coletiva & Vacinas (153-158)
+  {
+    id: 153,
+    category: 'Saúde Coletiva & Vacinas',
+    question: 'Qual o esquema vacinal da Febre Amarela no Calendário Nacional de Vacinação do SUS para crianças?',
+    answer: '1ª dose aos 9 meses de vida e uma dose de reforço aos 4 anos de idade.',
+    keyMnemonic: 'Febre Amarela: 9 meses + Reforço aos 4 anos. Acima de 5 anos: dose única!',
+    explanation: 'A vacina é de vírus vivo atenuado; pessoas que receberam a vacina a partir dos 5 anos são consideradas imunizadas para a vida toda.',
+    status: 'new'
+  },
+  {
+    id: 154,
+    category: 'Saúde Coletiva & Vacinas',
+    question: 'Qual a faixa etária recomendada no SUS para a Vacina Meningocócica ACWY (conjugada) em adolescentes?',
+    answer: 'Adolescentes de 11 a 14 anos de idade (dose única ou reforço).',
+    keyMnemonic: 'Meningocócica ACWY: 11 a 14 anos de idade no SUS',
+    explanation: 'Protege contra quatro sorogrupos de Neisseria meningitidis causadores de meningite bacteriana aguda e meningococcemia.',
+    status: 'new'
+  },
+  {
+    id: 155,
+    category: 'Saúde Coletiva & Vacinas',
+    question: 'O que é um Evento Adverso Pós-Vacinação (EAPV) grave e qual a conduta da enfermagem?',
+    answer: 'Qualquer ocorrência médica indesejável que resulte em hospitalização, sequela, risco de morte ou óbito após imunização; conduta: notificação imediata em até 24 horas no sistema e-SUS/vigilância.',
+    keyMnemonic: 'EAPV Grave: Notificar em até 24h para a Vigilância Epidemiológica',
+    explanation: 'A notificação rápida é indispensável para investigação do lote e garantia da segurança vacinal coletiva.',
+    status: 'new'
+  },
+  {
+    id: 156,
+    category: 'Saúde Coletiva & Vacinas',
+    question: 'Cite 4 agravos de Notificação Compulsória IMEDIATA (em até 24 horas) ao Ministério da Saúde:',
+    answer: '1. Raiva humana e acidente por animal raivoso; 2. Botulismo; 3. Cólera; 4. Febre Amarela (e suspeita de Peste ou Varíola).',
+    keyMnemonic: 'Notificação em até 24h: Raiva, Botulismo, Cólera, Febre Amarela',
+    explanation: 'A notificação deve ser feita por telefone, e-mail institucional ou sistema eletrônico em tempo real.',
+    status: 'new'
+  },
+  {
+    id: 157,
+    category: 'Saúde Coletiva & Vacinas',
+    question: 'Qual a diferença conceitual entre Incidência e Prevalência na epidemiologia e saúde pública?',
+    answer: 'Incidência: mede a frequência de casos NOVOS de uma doença em um período; Prevalência: mede o total de casos EXISTENTES (novos + antigos) em um dado momento.',
+    keyMnemonic: 'Incidência = Casos Novos (velocidade da doença) | Prevalência = Casos Totais (estoque da doença)',
+    explanation: 'A incidência é expressa como taxa e é útil para doenças agudas; a prevalência é útil no planejamento de doenças crônicas (ex: hipertensão, diabetes).',
+    status: 'new'
+  },
+  {
+    id: 158,
+    category: 'Saúde Coletiva & Vacinas',
+    question: 'Qual o tempo de leitura preconizado para os Testes Rápidos de Triagem (HIV, Sífilis, Hepatites B e C) na Atenção Primária?',
+    answer: 'Entre 15 e 30 minutos após a aplicação da amostra e do reagente diluente (respeitando estritamente a bula do fabricante).',
+    keyMnemonic: 'Teste Rápido: Leitura em 15 a 30 minutos (nunca ler após 30 min por risco de falso-positivo)',
+    explanation: 'A presença da linha na região C (Controle) valida o teste; a presença simultânea na linha T (Teste) indica resultado reagente.',
     status: 'new'
   }
 ];

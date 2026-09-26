@@ -14,11 +14,42 @@ import {
   Calendar,
   Sparkles,
   PlusCircle,
-  Activity
+  Activity,
+  LogIn,
+  LogOut,
+  Pause,
+  Play,
+  Timer,
+  Radio
 } from 'lucide-react';
 
 export const ProgressoView: React.FC = () => {
-  const { stats, overallProgressPercentage, flashcards, registerStudySession } = useApp();
+  const {
+    stats,
+    overallProgressPercentage,
+    flashcards,
+    registerStudySession,
+    resetStudyTimeToZero,
+    setCurrentView,
+    sessionEntryTime,
+    sessionLastExitTime,
+    sessionActiveSeconds,
+    isSessionTracking,
+    toggleSessionTracking,
+    formatDurationHHMMSS
+  } = useApp();
+
+  // Helper to format study time nicely in Portuguese
+  const formatStudyHours = (hours: number) => {
+    if (!hours || hours <= 0) return '0 min';
+    const totalMinutes = Math.round(hours * 60);
+    if (totalMinutes < 60) {
+      return `${totalMinutes} min`;
+    }
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return m > 0 ? `${h}h ${m}min` : `${h}h`;
+  };
 
   // Real-time ticking clock
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -59,17 +90,30 @@ export const ProgressoView: React.FC = () => {
   const accuracyPercentage =
     totalQuestions > 0 ? Math.round((correctQuestions / totalQuestions) * 100) : 0;
 
-  // Disciplines performance breakdown
-  const disciplines = [
-    { name: 'Fundamentos de Enfermagem', total: 15, mastered: stats.masteredCardIds.filter(id => id <= 15).length, weight: 'Alta' },
-    { name: 'Farmacologia & Cálculos', total: 15, mastered: stats.masteredCardIds.filter(id => id > 15 && id <= 30).length, weight: 'Alta' },
-    { name: 'Urgência & Emergência', total: 15, mastered: stats.masteredCardIds.filter(id => id > 30 && id <= 45).length, weight: 'Alta' },
-    { name: 'SUS & Legislação', total: 15, mastered: stats.masteredCardIds.filter(id => id > 45 && id <= 60).length, weight: 'Média' },
-    { name: 'Biossegurança & Infecção', total: 15, mastered: stats.masteredCardIds.filter(id => id > 60 && id <= 75).length, weight: 'Média' },
-    { name: 'Saúde da Mulher & Criança', total: 15, mastered: stats.masteredCardIds.filter(id => id > 75 && id <= 90).length, weight: 'Alta' },
-    { name: 'Médico-Cirúrgica & Feridas', total: 10, mastered: stats.masteredCardIds.filter(id => id > 90 && id <= 100).length, weight: 'Média' },
-    { name: 'Saúde Coletiva & Vacinas', total: 8, mastered: stats.masteredCardIds.filter(id => id > 100).length, weight: 'Média' }
-  ];
+  // Disciplines performance breakdown computed dynamically from actual flashcards
+  const disciplines = useMemo(() => {
+    const categories: { name: string; weight: 'Alta' | 'Média' }[] = [
+      { name: 'Fundamentos de Enfermagem', weight: 'Alta' },
+      { name: 'Farmacologia & Cálculos', weight: 'Alta' },
+      { name: 'Urgência & Emergência', weight: 'Alta' },
+      { name: 'SUS & Legislação', weight: 'Média' },
+      { name: 'Biossegurança & Infecção', weight: 'Média' },
+      { name: 'Saúde da Mulher & Criança', weight: 'Alta' },
+      { name: 'Médico-Cirúrgica', weight: 'Média' },
+      { name: 'Saúde Coletiva & Vacinas', weight: 'Média' }
+    ];
+
+    return categories.map(cat => {
+      const catCards = flashcards.filter(c => c.category === cat.name);
+      const mastered = catCards.filter(c => stats.masteredCardIds.includes(c.id)).length;
+      return {
+        name: cat.name,
+        total: catCards.length,
+        mastered,
+        weight: cat.weight
+      };
+    });
+  }, [flashcards, stats.masteredCardIds]);
 
   // Dynamic 7-day calendar history ending TODAY in real-time
   const last7DaysData = useMemo(() => {
@@ -198,19 +242,192 @@ export const ProgressoView: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-[#091526] border border-[#142A46] rounded-2xl p-5 shadow-lg">
+        <div className="bg-[#091526] border border-[#142A46] rounded-2xl p-5 shadow-lg relative overflow-hidden">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold">Sequência</span>
-            <Flame className="w-4 h-4 text-amber-400" />
+            <span className="text-xs font-semibold">Tempo Estudado</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00E5A3]/10 border border-[#00E5A3]/30 text-[10px] text-[#00E5A3] font-bold">
+              <Clock
+                className={`w-3 h-3 ${
+                  isSessionTracking ? 'animate-spin [animation-duration:8s]' : 'opacity-60'
+                }`}
+              />
+              <span>{isSessionTracking ? 'Girando ao vivo' : 'Pausado'}</span>
+            </div>
           </div>
-          <div className="text-3xl font-black text-white flex items-center gap-1.5">
-            <span>{stats.consecutiveDays}</span>
-            <span className="text-lg font-normal text-slate-400">dias</span>
-            <span className="text-xl">🔥</span>
+          <div className="text-2xl sm:text-3xl font-black text-white flex items-baseline gap-1.5 flex-wrap">
+            <span>{formatStudyHours(stats.studyTimeHours)}</span>
+            {stats.studyTimeHours >= 1 && (
+              <span className="text-xs text-slate-400 font-mono font-normal">
+                ({stats.studyTimeHours.toFixed(1)}h)
+              </span>
+            )}
+            <span className="text-xs font-mono text-[#00E5A3] font-bold">
+              +{formatDurationHHMMSS(sessionActiveSeconds)}
+            </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">
-            {stats.studyTimeHours.toFixed(1)}h dedicadas no total
-          </p>
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#142A46] text-[11px]">
+            <span className="text-slate-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00E5A3] animate-ping" />
+              <span>Entrada: {sessionEntryTime}</span>
+            </span>
+            {stats.studyTimeHours > 0 && (
+              <button
+                type="button"
+                onClick={resetStudyTimeToZero}
+                title="Zerar cronômetro e reiniciar tempo"
+                className="text-rose-400 hover:text-rose-300 underline font-medium cursor-pointer"
+              >
+                Zerar tempo
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* AUTOMATED PRESENCE / STUDY TIME TRACKER (Entrada e Saída em Tempo Real) */}
+      <div className="bg-gradient-to-r from-[#071424] via-[#091b30] to-[#0a182b] border border-[#162D4A] rounded-3xl p-6 sm:p-7 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-full bg-gradient-to-l from-[#00E5A3]/10 to-transparent pointer-events-none" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#00E5A3] animate-pulse" />
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#00E5A3]">
+                Ponto de Estudo Automatizado
+              </span>
+              <span className="text-xs text-slate-500">•</span>
+              <span className="text-xs font-medium text-slate-400">
+                Gira sozinho conforme horário de entrada e saída
+              </span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2.5">
+              <span>Presença Contínua no App</span>
+              <div className="p-1 rounded-lg bg-[#00E5A3]/15 text-[#00E5A3]">
+                <Clock
+                  className={`w-4 h-4 ${
+                    isSessionTracking ? 'animate-spin [animation-duration:6s]' : ''
+                  }`}
+                />
+              </div>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
+              O tempo de estudo acumula e gira sozinho em segundo plano enquanto você navega e revisa flashcards, resumos e questões. Ao fechar ou sair do app, seu horário de saída é registrado automaticamente.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleSessionTracking}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer border ${
+                isSessionTracking
+                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  : 'bg-[#00E5A3]/10 hover:bg-[#00E5A3]/20 text-[#00E5A3] border-[#00E5A3]/30'
+              }`}
+              title={isSessionTracking ? 'Pausar temporariamente o cronômetro' : 'Retomar cronômetro de presença'}
+            >
+              {isSessionTracking ? (
+                <>
+                  <Pause className="w-3.5 h-3.5" />
+                  <span>Pausar Ponto</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Retomar Ponto</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentView('foco')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#00E5A3] text-black hover:bg-[#00c98f] transition-all cursor-pointer shadow-[0_0_20px_rgba(0,229,163,0.25)]"
+              title="Abrir o Modo Foco com cronômetro imersivo em tela preta"
+            >
+              <Timer className="w-3.5 h-3.5" />
+              <span>Abrir Modo Foco</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 4 Real-time Time Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-6 pt-6 border-t border-[#142A46]">
+          {/* 1. Entrada */}
+          <div className="bg-[#050C17]/80 border border-[#142A46] rounded-2xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <LogIn className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Horário de Entrada
+              </span>
+              <span className="text-base font-black text-white font-mono">
+                {sessionEntryTime}
+              </span>
+              <span className="text-[10px] text-emerald-400/90 block font-medium">
+                Sessão iniciada hoje
+              </span>
+            </div>
+          </div>
+
+          {/* 2. Tempo na Sessão Atual (Gira Sozinho) */}
+          <div className="bg-[#050C17]/80 border border-[#00E5A3]/30 rounded-2xl p-4 flex items-center gap-3 relative shadow-[0_0_20px_rgba(0,229,163,0.06)]">
+            <div className="w-10 h-10 rounded-xl bg-[#00E5A3]/15 text-[#00E5A3] flex items-center justify-center shrink-0">
+              <Clock
+                className={`w-5 h-5 ${
+                  isSessionTracking ? 'animate-spin [animation-duration:10s]' : ''
+                }`}
+              />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-[#00E5A3] uppercase tracking-wider block">
+                Sessão em Andamento
+              </span>
+              <span className="text-lg font-black text-white font-mono tracking-tight block text-[#00E5A3]">
+                {formatDurationHHMMSS(sessionActiveSeconds)}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-medium">
+                {isSessionTracking ? 'Girando em tempo real' : 'Contagem pausada'}
+              </span>
+            </div>
+          </div>
+
+          {/* 3. Última Saída */}
+          <div className="bg-[#050C17]/80 border border-[#142A46] rounded-2xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Última Saída
+              </span>
+              <span className="text-base font-black text-white font-mono">
+                {sessionLastExitTime}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-medium">
+                Gravado no último encerramento
+              </span>
+            </div>
+          </div>
+
+          {/* 4. Total Acumulado Hoje */}
+          <div className="bg-[#050C17]/80 border border-[#142A46] rounded-2xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Total de Estudo Hoje
+              </span>
+              <span className="text-base font-black text-white font-mono">
+                {formatStudyHours(stats.studyTimeHours)}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-medium">
+                Atualizado a cada 10s
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -222,9 +439,9 @@ export const ProgressoView: React.FC = () => {
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <PieChart className="w-4 h-4 text-[#00E5A3]" />
-                Domínio dos Flashcards (+100)
+                Domínio dos Flashcards (+150)
               </h3>
-              <p className="text-xs text-slate-400">Status dos 108 cards de estudo</p>
+              <p className="text-xs text-slate-400">Status dos {totalCards} cards de estudo</p>
             </div>
             <span className="text-xs font-bold text-[#00E5A3]">
               {Math.round((stats.reviewedCardIds.length / totalCards) * 100)}% explorados
@@ -281,12 +498,12 @@ export const ProgressoView: React.FC = () => {
             </div>
             <div className="text-right">
               <span className="text-xs font-bold text-cyan-400 block font-mono">
-                {stats.studyTimeHours.toFixed(1)}h Total
+                {formatStudyHours(stats.studyTimeHours)} ({stats.studyTimeHours.toFixed(1)}h)
               </span>
               <span className="text-[10px] text-[#00E5A3] font-semibold">
                 {stats.dailyStudyHistory?.[last7DaysData[6]?.dateKey]
-                  ? `${stats.dailyStudyHistory[last7DaysData[6].dateKey].toFixed(1)}h hoje`
-                  : '0h hoje'}
+                  ? `${formatStudyHours(stats.dailyStudyHistory[last7DaysData[6].dateKey])} hoje`
+                  : '0 min hoje'}
               </span>
             </div>
           </div>
@@ -348,11 +565,17 @@ export const ProgressoView: React.FC = () => {
             })}
           </div>
 
-          {/* Quick study logging trigger for testing and recording extra sessions */}
+          {/* Quick study logging trigger & Modo Foco shortcut */}
           <div className="pt-2 border-t border-[#12243B] flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[11px] text-slate-400">
-              Cada questão, card ou missão feita adiciona tempo ao dia de hoje!
-            </span>
+            <button
+              type="button"
+              onClick={() => setCurrentView('foco')}
+              className="text-xs bg-[#00E5A3] hover:bg-[#00c98f] text-black px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,163,0.3)]"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Abrir Modo Foco</span>
+            </button>
+
             <button
               type="button"
               onClick={() => registerStudySession(15, 'Sessão de Leitura')}

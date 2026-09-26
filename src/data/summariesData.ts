@@ -53,7 +53,7 @@ export const SUMMARIES_DATA: StudySummary[] = [
         headers: ['Via', 'Ângulo de Inserção', 'Volume Máximo', 'Locais Preferenciais'],
         rows: [
           ['Intradérmica (ID)', '10° a 15°', '0,1 a 0,5 mL', 'Face anterior do antebraço, região deltoide'],
-          ['Subcutânea (SC)', '45° ou 90°', 'Até 1,5 mL', 'Abdômen peri-umbilical, face externa do braço, coxa'],
+          ['Subcutânea (SC)', '45° ou 90°', 'Até 1,5 mL', 'Abdômen periumbilical, face externa do braço, coxa'],
           ['Intramuscular (IM)', '90°', '2 mL (Deltoide) / 4-5 mL (Glúteos)', 'Ventroglúteo (Hochstetter), Vasto lateral, Deltoide'],
           ['Endovenosa (EV)', '15° a 30°', 'Variável (conforme prescrição)', 'Veias cefálica, basílica, intermédia do antebraço']
         ]

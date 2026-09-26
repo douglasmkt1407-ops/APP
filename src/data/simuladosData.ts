@@ -403,7 +403,7 @@ export const SIMULADOS_DATA: Simulado[] = [
           { letter: 'D', text: 'Salbutamol aerossol via inalatória sob máscara.' }
         ],
         correctAnswer: 'C',
-        explanation: 'A Adrenalina IM no músculo vasto lateral da coxa é o único medicamento comprovado que reverte o colapso vascular e edema de laringe da anafilaxia com absorção ultra-rápida.'
+        explanation: 'A Adrenalina IM no músculo vasto lateral da coxa é o único medicamento comprovado que reverte o colapso vascular e edema de laringe da anafilaxia com absorção ultrarrápida.'
       },
       {
         id: 305,
@@ -773,7 +773,7 @@ export const SIMULADOS_DATA: Simulado[] = [
         simuladoId: 5,
         difficulty: 'dificil',
         subject: 'Biossegurança & Infecção',
-        statement: 'Um profissional de enfermagem sofre acidente pérfuro-cortante com agulha de punção venosa profunda com sangue visível de paciente comprovadamente HIV positivo com alta carga viral. De acordo com o Protocolo Clínico do Ministério da Saúde para Profilaxia Pós-Exposição (PEP), qual a conduta imediata recomendada?',
+        statement: 'Um profissional de enfermagem sofre acidente perfurocortante com agulha de punção venosa profunda com sangue visível de paciente comprovadamente HIV positivo com alta carga viral. De acordo com o Protocolo Clínico do Ministério da Saúde para Profilaxia Pós-Exposição (PEP), qual a conduta imediata recomendada?',
         options: [
           { letter: 'A', text: 'Espremer vigorosamente o ferimento para forçar sangramento e aplicar hipoclorito a 10% puro.' },
           { letter: 'B', text: 'Lavar exaustivamente o local com água e sabão, notificar o acidente, e iniciar os antirretrovirais da PEP preferencialmente nas primeiras 2 horas (limite máximo de até 72 horas) por 28 dias consecutivos.' },
@@ -1095,7 +1095,7 @@ export const SIMULADOS_DATA: Simulado[] = [
           { letter: 'A', text: 'Iniciar compressões torácicas com a técnica dos dois polegares na proporção 3:1.' },
           { letter: 'B', text: 'Iniciar Ventilação com Pressão Positiva (VPP) com máscara facial e balão autoinflável em ar ambiente (21%) na frequência de 40 a 60 rpm.' },
           { letter: 'C', text: 'Infundir Epinefrina endovenosa via cateterismo da veia umbilical de emergência.' },
-          { letter: 'D', text: 'Realizar desfibilação precoce de 2 Joules/kg com pás infantis.' }
+          { letter: 'D', text: 'Realizar desfibrilação precoce de 2 Joules/kg com pás infantis.' }
         ],
         correctAnswer: 'B',
         explanation: 'A medida mais importante na reanimação neonatal é a Ventilação com Pressão Positiva (VPP). Em RN a termo, inicia-se em ar ambiente (O2 a 21%) por 30 segundos com monitorização por oxímetro e ECG.'

@@ -13,7 +13,8 @@ import {
   HelpCircle,
   LogOut,
   Sparkles,
-  Activity
+  Activity,
+  Timer
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
     { id: 'questoes', label: 'Questões', icon: Zap },
     { id: 'resumos', label: 'Resumos Express', icon: FileText },
     { id: 'checklist', label: 'Checklist Diário', icon: CheckSquare },
+    { id: 'foco', label: 'Modo Foco', icon: Timer },
     { id: 'progresso', label: 'Meu Progresso', icon: TrendingUp },
     { id: 'sprint', label: 'Sprint de 7 Dias', icon: Calendar },
     { id: 'configuracoes', label: 'Configurações', icon: Settings },
@@ -87,6 +89,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
                   }`}
                 />
                 <span className="truncate">{item.label}</span>
+                {item.id === 'foco' && !isActive && (
+                  <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#00E5A3]/10 text-[#00E5A3] border border-[#00E5A3]/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00E5A3] animate-pulse" />
+                    Foco
+                  </span>
+                )}
                 {item.id === 'sprint' && !isActive && (
                   <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#00E5A3]/10 text-[#00E5A3] border border-[#00E5A3]/30">
                     7 Dias
@@ -94,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
                 )}
                 {item.id === 'cards' && !isActive && (
                   <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                    +100
+                    +150
                   </span>
                 )}
               </button>

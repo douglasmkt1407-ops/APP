@@ -5,6 +5,7 @@ export type ViewType =
   | 'resumos'
   | 'checklist'
   | 'progresso'
+  | 'foco'
   | 'sprint'
   | 'configuracoes'
   | 'suporte';

@@ -7,7 +7,8 @@ import {
   User,
   Sparkles,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -22,7 +23,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
     stats,
     inAppNotification,
     dismissInAppNotification,
-    sendTestNotification
+    sendTestNotification,
+    sessionEntryTime,
+    sessionLastExitTime,
+    sessionActiveSeconds,
+    isSessionTracking,
+    formatDurationHHMMSS
   } = useApp();
 
   const getViewTitle = () => {
@@ -97,7 +103,29 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
         </div>
 
         {/* Right side stats & quick actions */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Automated Live Session Tracker (Entrada & Saída em tempo real) */}
+          <button
+            type="button"
+            onClick={() => setCurrentView('progresso')}
+            title={`Tempo Estudado em Tempo Real • Entrada: ${sessionEntryTime} • Última saída: ${sessionLastExitTime} • Clique para ver Meu Progresso`}
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#091526] hover:bg-[#0c1c33] border border-[#142A46] hover:border-[#00E5A3]/40 text-xs font-semibold transition-all cursor-pointer group shadow-sm"
+          >
+            <div className="relative flex items-center justify-center w-3.5 h-3.5">
+              <Clock
+                className={`w-3.5 h-3.5 text-[#00E5A3] transition-transform ${
+                  isSessionTracking ? 'animate-spin [animation-duration:8s]' : 'opacity-60'
+                }`}
+              />
+            </div>
+            <span className="font-mono text-[#00E5A3] font-bold text-xs tracking-tight">
+              {formatDurationHHMMSS(sessionActiveSeconds)}
+            </span>
+            <span className="hidden xl:inline text-[10px] text-slate-400 group-hover:text-slate-300 font-normal">
+              sessão
+            </span>
+          </button>
+
           {/* Consecutive days streak badge */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#091526] border border-[#142A46] text-xs font-bold text-slate-200">
             <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
