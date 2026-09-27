@@ -14,6 +14,7 @@ import { SprintView } from './components/views/SprintView';
 import { ConfiguracoesView } from './components/views/ConfiguracoesView';
 import { SuporteView } from './components/views/SuporteView';
 import { InstallAppModal } from './components/InstallAppModal';
+import { GuidedTourModal } from './components/GuidedTourModal';
 
 const MainContent: React.FC = () => {
   const { user, currentView, isInstallModalOpen, setIsInstallModalOpen } = useApp();
@@ -85,6 +86,9 @@ const MainContent: React.FC = () => {
         isOpen={isInstallModalOpen}
         onClose={() => setIsInstallModalOpen(false)}
       />
+
+      {/* Guided Tour for New Users & On-Demand Replay */}
+      <GuidedTourModal />
     </div>
   );
 };

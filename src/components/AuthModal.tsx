@@ -15,9 +15,10 @@ import {
   Users,
   Sparkles,
   RefreshCw,
-  Database
+  Database,
+  Trash2
 } from 'lucide-react';
-import { getSavedCredentials, UserAccountMemory } from '../utils/userMemory';
+import { getSavedCredentials, UserAccountMemory, removeStoredAccount } from '../utils/userMemory';
 
 export const AuthModal: React.FC = () => {
   const { login, registerAccount, getAllStoredAccounts, changePassword } = useApp();
@@ -45,10 +46,15 @@ export const AuthModal: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [resetMessage, setResetMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const storedAccounts = getAllStoredAccounts();
+  const [storedAccounts, setStoredAccounts] = useState<UserAccountMemory[]>(() => getAllStoredAccounts());
 
   useEffect(() => {
+    // Only load accounts stored locally on this device
+    const local = getAllStoredAccounts();
+    setStoredAccounts(local);
+
     // Pre-fill remembered credentials if exists
     const saved = getSavedCredentials();
     if (saved && saved.email) {
@@ -57,12 +63,24 @@ export const AuthModal: React.FC = () => {
         setPassword(saved.password);
       }
       setRememberMe(saved.rememberMe !== false);
-    } else if (storedAccounts.length > 0) {
-      setEmail(storedAccounts[0].email);
+    } else if (local.length === 1) {
+      setEmail(local[0].email);
+      if (local[0].password && local[0].password !== '***') {
+        setPassword(local[0].password);
+      }
     }
   }, []);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleDeleteAccount = (accountEmail: string) => {
+    const updated = removeStoredAccount(accountEmail);
+    setStoredAccounts(updated);
+    if (email.toLowerCase() === accountEmail.toLowerCase()) {
+      setEmail('');
+      setPassword('');
+    }
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
@@ -77,13 +95,18 @@ export const AuthModal: React.FC = () => {
       return;
     }
 
-    const res = login(email, password, rememberMe);
-    if (!res.success) {
-      setErrorMessage(res.message || 'Falha ao autenticar.');
+    setIsSubmitting(true);
+    try {
+      const res = await login(email, password, rememberMe);
+      if (!res.success) {
+        setErrorMessage(res.message || 'Falha ao autenticar.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
@@ -108,13 +131,18 @@ export const AuthModal: React.FC = () => {
       return;
     }
 
-    const res = registerAccount(email, password, name, targetExam, rememberMe);
-    if (!res.success) {
-      setErrorMessage(res.message || 'Erro ao criar conta.');
+    setIsSubmitting(true);
+    try {
+      const res = await registerAccount(email, password, name, targetExam, rememberMe);
+      if (!res.success) {
+        setErrorMessage(res.message || 'Erro ao criar conta.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleResetPasswordSubmit = (e: React.FormEvent) => {
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetMessage(null);
 
@@ -133,23 +161,37 @@ export const AuthModal: React.FC = () => {
       return;
     }
 
-    const res = changePassword(resetEmail, newPassword);
-    if (res.success) {
-      setResetMessage({ type: 'success', text: 'Senha atualizada com sucesso! Você já pode entrar.' });
-      setEmail(resetEmail);
-      setPassword(newPassword);
-      setTimeout(() => {
-        setShowForgotModal(false);
-        setResetMessage(null);
-      }, 1500);
-    } else {
-      setResetMessage({ type: 'error', text: res.message });
+    setIsSubmitting(true);
+    try {
+      const res = await changePassword(resetEmail, newPassword);
+      if (res.success) {
+        setResetMessage({ type: 'success', text: 'Senha atualizada com sucesso no banco de dados! Você já pode entrar.' });
+        setEmail(resetEmail);
+        setPassword(newPassword);
+        setTimeout(() => {
+          setShowForgotModal(false);
+          setResetMessage(null);
+        }, 1500);
+      } else {
+        setResetMessage({ type: 'error', text: res.message });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const selectAccount = (acc: UserAccountMemory) => {
     setEmail(acc.email);
-    setPassword(acc.password || '');
+    if (acc.password && acc.password !== '***') {
+      setPassword(acc.password);
+    } else {
+      const creds = getSavedCredentials();
+      if (creds && creds.email.toLowerCase() === acc.email.toLowerCase() && creds.password) {
+        setPassword(creds.password);
+      } else {
+        setPassword('');
+      }
+    }
     setShowAccountsList(false);
     setErrorMessage('');
   };
@@ -226,7 +268,7 @@ export const AuthModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Stored accounts quick switcher if exists */}
+        {/* Stored accounts quick switcher if exists on this device */}
         {!isRegistering && storedAccounts.length > 0 && (
           <div className="mb-4">
             <button
@@ -236,30 +278,53 @@ export const AuthModal: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#00E5A3]" />
-                <span>Contas salvas no dispositivo ({storedAccounts.length})</span>
+                <span>
+                  {storedAccounts.length === 1
+                    ? 'Sua conta salva neste aparelho'
+                    : `Contas salvas neste aparelho (${storedAccounts.length})`}
+                </span>
               </div>
               <span className="text-[10px] text-[#00E5A3] font-bold">
-                {showAccountsList ? 'Ocultar' : 'Ver Contas'}
+                {showAccountsList ? 'Ocultar' : 'Ver'}
               </span>
             </button>
 
             {showAccountsList && (
               <div className="mt-2 space-y-1.5 p-2 rounded-xl bg-[#060D17] border border-[#162942] max-h-36 overflow-y-auto">
                 {storedAccounts.map(acc => (
-                  <button
+                  <div
                     key={acc.email}
-                    type="button"
-                    onClick={() => selectAccount(acc)}
-                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-[#0E1E34] text-left transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-[#0E1E34] transition-colors"
                   >
-                    <div>
+                    <button
+                      type="button"
+                      onClick={() => selectAccount(acc)}
+                      className="flex-1 text-left cursor-pointer mr-2 overflow-hidden"
+                    >
                       <div className="text-xs font-bold text-white truncate">{acc.name}</div>
                       <div className="text-[10px] text-slate-400 truncate">{acc.email}</div>
+                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => selectAccount(acc)}
+                        className="text-[10px] px-2.5 py-1 rounded-full bg-[#00E5A3]/10 hover:bg-[#00E5A3]/20 text-[#00E5A3] font-bold cursor-pointer transition-colors"
+                      >
+                        Entrar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAccount(acc.email);
+                        }}
+                        title="Esquecer esta conta deste aparelho"
+                        className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00E5A3]/10 text-[#00E5A3] font-bold">
-                      Selecionar
-                    </span>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}

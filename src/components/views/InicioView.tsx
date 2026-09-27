@@ -13,7 +13,8 @@ import {
   RotateCcw,
   Smartphone,
   Download,
-  Database
+  Database,
+  Compass
 } from 'lucide-react';
 
 export const InicioView: React.FC = () => {
@@ -33,7 +34,8 @@ export const InicioView: React.FC = () => {
     formatDurationHHMMSS,
     setIsInstallModalOpen,
     canInstallPwa,
-    promptPwaInstall
+    promptPwaInstall,
+    startTour
   } = useApp();
 
   return (
@@ -137,6 +139,14 @@ export const InicioView: React.FC = () => {
             >
               <Zap className="w-4 h-4 text-[#00E5A3]" />
               <span>Ver Simulados</span>
+            </button>
+
+            <button
+              onClick={startTour}
+              className="px-5 py-3 rounded-full bg-[#0084FF]/15 hover:bg-[#0084FF]/25 border border-[#0084FF]/40 text-sky-300 font-bold text-sm flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5 shadow-[0_0_15px_rgba(0,132,255,0.2)]"
+            >
+              <Compass className="w-4 h-4 text-sky-400 animate-spin-slow" />
+              <span>Tour Interativo</span>
             </button>
           </div>
         </div>

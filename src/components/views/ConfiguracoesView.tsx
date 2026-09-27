@@ -28,7 +28,8 @@ import {
   KeyRound,
   Database,
   Lock,
-  Download
+  Download,
+  Compass
 } from 'lucide-react';
 
 export const ConfiguracoesView: React.FC = () => {
@@ -39,6 +40,7 @@ export const ConfiguracoesView: React.FC = () => {
     setIsInstallModalOpen,
     promptPwaInstall,
     canInstallPwa,
+    startTour,
     notifications,
     updateNotificationSettings,
     requestBrowserNotificationPermission,
@@ -782,7 +784,7 @@ export const ConfiguracoesView: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (!user?.email) return;
                 if (!newPasswordVal || newPasswordVal.length < 3) {
                   setPasswordChangeFeedback({ text: 'A nova senha deve ter no mínimo 3 dígitos.', isError: true });
@@ -792,9 +794,9 @@ export const ConfiguracoesView: React.FC = () => {
                   setPasswordChangeFeedback({ text: 'As senhas não conferem.', isError: true });
                   return;
                 }
-                const res = changePassword(user.email, newPasswordVal);
+                const res = await changePassword(user.email, newPasswordVal);
                 if (res.success) {
-                  setPasswordChangeFeedback({ text: 'Senha alterada com sucesso e salva na memória permanente!', isError: false });
+                  setPasswordChangeFeedback({ text: 'Senha alterada com sucesso e salva no banco de dados central!', isError: false });
                   setNewPasswordVal('');
                   setConfirmPasswordVal('');
                 } else {
@@ -855,6 +857,42 @@ export const ConfiguracoesView: React.FC = () => {
             className="px-4 py-2.5 rounded-xl bg-[#060D17] hover:bg-[#102238] border border-[#162D4A] text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <span>Ver Instruções para iPhone / Android</span>
+          </button>
+        </div>
+      </div>
+
+      {/* SECTION: GUIDED TOUR REPLAY */}
+      <div className="bg-[#091526] border border-[#0084FF]/30 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between pb-3 border-b border-[#142A46]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0084FF]/10 flex items-center justify-center text-[#0084FF]">
+              <Compass className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Tour Interativo da Plataforma</h2>
+              <p className="text-xs text-slate-400">
+                Apresentação guiada das ferramentas de memorização e simulados
+              </p>
+            </div>
+          </div>
+
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#0084FF]/15 text-[#0084FF] border border-[#0084FF]/30 hidden sm:inline">
+            Tutorial Guiado
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Reveja o tutorial passo a passo explicando como funciona o sistema de repetição espaçada dos flashcards 3D, a calibração dos 10 simulados (fácil/médio/difícil), os resumos express e o cronômetro do Modo Foco.
+        </p>
+
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={startTour}
+            className="px-5 py-2.5 rounded-xl bg-[#0084FF] hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(0,132,255,0.3)] transition-all cursor-pointer"
+          >
+            <Compass className="w-4 h-4" />
+            <span>Fazer Tour Guiado Novamente</span>
           </button>
         </div>
       </div>

@@ -3,22 +3,23 @@
   "short_name": "NEXTENF",
   "description": "Plataforma de estudos para Enfermagem com simulados, flashcards, resumos e sprint.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#050B14",
   "theme_color": "#00E5A3",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

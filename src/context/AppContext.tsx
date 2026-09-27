@@ -30,7 +30,12 @@ import {
   getActiveEmail,
   setActiveEmail,
   isExplicitLoggedOut,
-  updateAccountPassword
+  updateAccountPassword,
+  serverLogin,
+  serverRegister,
+  serverChangePassword,
+  fetchAccountFromServer,
+  fetchAllAccountsFromServer
 } from '../utils/userMemory';
 
 export interface RegisteredAccount {
@@ -48,12 +53,12 @@ interface AppContextType {
   currentView: ViewType;
   setCurrentView: (view: ViewType) => void;
   user: UserProfile | null;
-  login: (email: string, password?: string, rememberMe?: boolean) => { success: boolean; message?: string };
-  registerAccount: (email: string, password: string, name: string, targetExam: string, rememberMe?: boolean) => { success: boolean; message?: string };
+  login: (email: string, password?: string, rememberMe?: boolean) => Promise<{ success: boolean; message?: string }>;
+  registerAccount: (email: string, password: string, name: string, targetExam: string, rememberMe?: boolean) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateProfile: (name: string, targetExam: string, avatarUrl?: string) => void;
   updateAvatar: (avatarUrl: string) => void;
-  changePassword: (email: string, newPassword: string) => { success: boolean; message: string };
+  changePassword: (email: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   getAllStoredAccounts: () => UserAccountMemory[];
 
   // PWA Install
@@ -61,6 +66,12 @@ interface AppContextType {
   isInstallModalOpen: boolean;
   setIsInstallModalOpen: (open: boolean) => void;
   promptPwaInstall: () => Promise<void>;
+
+  // Guided Tour (Primeira Vez)
+  isTourOpen: boolean;
+  setIsTourOpen: (open: boolean) => void;
+  startTour: () => void;
+  completeTour: () => void;
 
   // Stats
   stats: UserStats;
@@ -312,6 +323,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return null;
   });
+
+  // Guided Tour State (First-time user onboarding)
+  const [isTourOpen, setIsTourOpen] = useState<boolean>(false);
+
+  const startTour = useCallback(() => {
+    setIsTourOpen(true);
+  }, []);
+
+  const completeTour = useCallback(() => {
+    setIsTourOpen(false);
+    if (user?.email) {
+      const norm = user.email.trim().toLowerCase();
+      updateActiveAccountData(norm, { hasCompletedTour: true });
+      localStorage.setItem('nextenf_tour_done_' + norm, 'true');
+    }
+  }, [user]);
+
+  // First-time tour auto trigger
+  useEffect(() => {
+    if (user?.email) {
+      const norm = user.email.trim().toLowerCase();
+      const localDone = localStorage.getItem('nextenf_tour_done_' + norm);
+      const acc = getAccountByEmail(norm);
+      if (!acc?.hasCompletedTour && localDone !== 'true') {
+        const timer = setTimeout(() => {
+          setIsTourOpen(true);
+        }, 900);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user?.email]);
 
   // User Stats (defaults to ZERO for realistic fresh experience, restores from user memory)
   const [stats, setStats] = useState<UserStats>(() => {
@@ -738,27 +780,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return getAllAccounts();
   }, []);
 
-  const changePassword = useCallback((email: string, newPassword: string) => {
-    return updateAccountPassword(email, newPassword);
+  const changePassword = useCallback(async (email: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+    return await serverChangePassword(email, newPassword);
+  }, []);
+
+  // Initial sync with central server database
+  useEffect(() => {
+    fetchAllAccountsFromServer().then(() => {
+      const active = getActiveEmail();
+      if (active) {
+        fetchAccountFromServer(active).then(freshAcc => {
+          if (freshAcc) {
+            if (freshAcc.stats) {
+              setStats(freshAcc.stats);
+            }
+            if (freshAcc.dailyGoals && freshAcc.dailyGoals.length > 0) {
+              const today = getTodayDateKey();
+              if (freshAcc.dailyGoalsDate === today) {
+                setDailyGoals(freshAcc.dailyGoals);
+              }
+            }
+            if (freshAcc.notifications) {
+              setNotifications(prev => ({
+                ...prev,
+                ...freshAcc.notifications,
+                scheduledReminders: freshAcc.notifications?.scheduledReminders || prev.scheduledReminders
+              }));
+            }
+          }
+        });
+      }
+    }).catch(() => {
+      // Offline fallback
+    });
   }, []);
 
   // Auth methods connected to persistent database vault
-  const login = (email: string, password?: string, rememberMe = true): { success: boolean; message?: string } => {
+  const login = async (email: string, password?: string, rememberMe = true): Promise<{ success: boolean; message?: string }> => {
     const normEmail = email.trim().toLowerCase();
-    const account = getAccountByEmail(normEmail);
+    
+    // 1. Attempt server login first
+    const srv = await serverLogin(normEmail, password);
+    let account: UserAccountMemory | null = null;
 
-    if (!account) {
-      return {
-        success: false,
-        message: 'E-mail não encontrado no banco de dados. Cadastre sua conta na aba ao lado.'
-      };
-    }
-
-    if (password && account.password !== password.trim()) {
-      return {
-        success: false,
-        message: 'Senha incorreta. Verifique suas credenciais e tente novamente.'
-      };
+    if (srv.success && srv.account) {
+      account = srv.account;
+    } else if (srv.message && !srv.message.includes('Falha de conexão')) {
+      // Server returned specific error (e.g. wrong password or not found)
+      return { success: false, message: srv.message };
+    } else {
+      // Offline fallback to local device vault
+      account = getAccountByEmail(normEmail);
+      if (!account) {
+        return {
+          success: false,
+          message: 'E-mail não encontrado no banco de dados. Cadastre sua conta na aba ao lado.'
+        };
+      }
+      if (password && account.password !== password.trim()) {
+        return {
+          success: false,
+          message: 'Senha incorreta. Verifique suas credenciais e tente novamente.'
+        };
+      }
     }
 
     const sessionUser: UserProfile = {
@@ -813,39 +897,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true };
   };
 
-  const registerAccount = (
+  const registerAccount = async (
     email: string,
     password: string,
     name: string,
     targetExam: string,
     rememberMe = true
-  ): { success: boolean; message?: string } => {
+  ): Promise<{ success: boolean; message?: string }> => {
     const normEmail = email.trim().toLowerCase();
-    const existing = getAccountByEmail(normEmail);
 
-    if (existing) {
-      return {
-        success: false,
-        message: 'Este e-mail já está cadastrado no banco de dados. Faça login com sua senha.'
+    // 1. Attempt central server registration
+    const srv = await serverRegister(normEmail, password, name, targetExam);
+    let newAccount: UserAccountMemory;
+
+    if (srv.success && srv.account) {
+      newAccount = srv.account;
+    } else if (srv.message && !srv.message.includes('Falha de conexão')) {
+      return { success: false, message: srv.message };
+    } else {
+      // Offline fallback
+      const existing = getAccountByEmail(normEmail);
+      if (existing) {
+        return {
+          success: false,
+          message: 'Este e-mail já está cadastrado no banco de dados. Faça login com sua senha.'
+        };
+      }
+
+      newAccount = {
+        id: 'user_' + Date.now(),
+        email: normEmail,
+        password: password.trim(),
+        name: name.trim() || 'Estudante de Enfermagem',
+        targetExam: targetExam.trim() || 'Concurso Técnico em Enfermagem / EBSERH',
+        avatarUrl: '',
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        stats: { ...DEFAULT_ZERO_STATS },
+        dailyGoals: [...DEFAULT_DAILY_GOALS],
+        dailyGoalsDate: getTodayDateKey(),
+        notifications: { ...DEFAULT_NOTIFICATIONS }
       };
+      saveOrUpdateAccount(newAccount);
     }
-
-    const newAccount: UserAccountMemory = {
-      id: 'user_' + Date.now(),
-      email: normEmail,
-      password: password.trim(),
-      name: name.trim() || 'Estudante de Enfermagem',
-      targetExam: targetExam.trim() || 'Concurso Técnico em Enfermagem / EBSERH',
-      avatarUrl: '',
-      createdAt: new Date().toISOString(),
-      lastActive: new Date().toISOString(),
-      stats: { ...DEFAULT_ZERO_STATS },
-      dailyGoals: [...DEFAULT_DAILY_GOALS],
-      dailyGoalsDate: getTodayDateKey(),
-      notifications: { ...DEFAULT_NOTIFICATIONS }
-    };
-
-    saveOrUpdateAccount(newAccount);
 
     const sessionUser: UserProfile = {
       id: newAccount.id,
@@ -858,9 +952,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setUser(sessionUser);
     setActiveEmail(newAccount.email);
-    setStats({ ...DEFAULT_ZERO_STATS });
-    setDailyGoals([...DEFAULT_DAILY_GOALS]);
-    setNotifications({ ...DEFAULT_NOTIFICATIONS });
+    setStats(newAccount.stats || { ...DEFAULT_ZERO_STATS });
+    setDailyGoals(newAccount.dailyGoals || [...DEFAULT_DAILY_GOALS]);
+    setNotifications(newAccount.notifications ? { ...DEFAULT_NOTIFICATIONS, ...newAccount.notifications } : { ...DEFAULT_NOTIFICATIONS });
 
     if (rememberMe) {
       setSavedCredentials({
@@ -878,6 +972,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sessionAccruedRef.current = 0;
 
     setCurrentView('inicio');
+
+    setTimeout(() => {
+      setIsTourOpen(true);
+    }, 700);
+
     return { success: true };
   };
 
@@ -1477,6 +1576,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isInstallModalOpen,
         setIsInstallModalOpen,
         promptPwaInstall,
+        isTourOpen,
+        setIsTourOpen,
+        startTour,
+        completeTour,
         stats,
         overallProgressPercentage,
         resetAllStatsToZero,

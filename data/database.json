@@ -1,0 +1,31 @@
+{
+  "accounts": [
+    {
+      "id": "user_1790520771469",
+      "email": "douglasmkt1407@gmail.com",
+      "password": "123",
+      "name": "Douglas",
+      "targetExam": "EBSERH",
+      "avatarUrl": "",
+      "createdAt": "2026-09-27T14:52:51.469Z",
+      "lastActive": "2026-09-27T14:52:51.469Z",
+      "stats": {
+        "cardsReviewedCount": 0,
+        "questionsAnsweredCount": 0,
+        "questionsCorrectCount": 0,
+        "consecutiveDays": 0,
+        "studyTimeHours": 0,
+        "simuladosAttempts": [],
+        "reviewedCardIds": [],
+        "masteredCardIds": [],
+        "readSummaryIds": [],
+        "completedDailyTasks": [],
+        "sprintProgress": {},
+        "dailyStudyHistory": {}
+      },
+      "dailyGoals": [],
+      "dailyGoalsDate": "2026-09-27",
+      "notifications": {}
+    }
+  ]
+}

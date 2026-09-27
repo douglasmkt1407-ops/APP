@@ -10,7 +10,8 @@ import {
   CheckCircle2,
   Clock,
   Smartphone,
-  Download
+  Download,
+  Compass
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -33,7 +34,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
     formatDurationHHMMSS,
     setIsInstallModalOpen,
     canInstallPwa,
-    promptPwaInstall
+    promptPwaInstall,
+    startTour
   } = useApp();
 
   const getViewTitle = () => {
@@ -137,6 +139,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             <span>{stats.consecutiveDays}</span>
             <span className="hidden sm:inline text-slate-400 font-normal">dias</span>
           </div>
+
+          {/* Guided Tour Trigger Button */}
+          <button
+            type="button"
+            onClick={startTour}
+            title="Abrir Tour Guiado pela Plataforma"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#0084FF]/10 hover:bg-[#0084FF]/20 border border-[#0084FF]/30 hover:border-[#0084FF] text-xs font-bold text-[#0084FF] transition-all cursor-pointer shadow-sm group"
+          >
+            <Compass className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform" />
+            <span className="hidden sm:inline">Tour Guiado</span>
+          </button>
 
           {/* Add to Home Screen / PWA button */}
           <button
