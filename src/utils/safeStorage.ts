@@ -2,8 +2,9 @@
  * Safe Storage utility that works reliably across all mobile browsers
  * (including Samsung Internet, Xiaomi Mi Browser, Chrome Android, Safari Private Mode, WebViews).
  * 
- * If window.localStorage is blocked, throws SecurityError (Knox, Smart Anti-Tracking, Incognito),
- * or throws QuotaExceededError, it seamlessly falls back to an in-memory map without crashing the app.
+ * Safely accesses window.localStorage with per-call try/catch blocks.
+ * Never permanently disables storage, ensuring saved credentials and accounts
+ * are always persisted across sessions and reboots.
  */
 
 class MemoryStorage {
@@ -28,63 +29,121 @@ class MemoryStorage {
 
 const memoryFallback = new MemoryStorage();
 
-// Detect whether localStorage is actually accessible and writable
-let isLocalStorageWorking = false;
-try {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const testKey = '__nextenf_test_storage__';
-    window.localStorage.setItem(testKey, '1');
-    window.localStorage.removeItem(testKey);
-    isLocalStorageWorking = true;
+// Helper to write to cookie as secondary fallback for critical auth keys
+function writeCookie(key: string, value: string, days = 365) {
+  try {
+    if (typeof document !== 'undefined') {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+    }
+  } catch {
+    // Cookie disabled or restricted
   }
-} catch {
-  isLocalStorageWorking = false;
+}
+
+function readCookie(key: string): string | null {
+  try {
+    if (typeof document !== 'undefined' && document.cookie) {
+      const name = encodeURIComponent(key) + '=';
+      const parts = document.cookie.split('; ');
+      for (const part of parts) {
+        if (part.indexOf(name) === 0) {
+          return decodeURIComponent(part.substring(name.length));
+        }
+      }
+    }
+  } catch {
+    // Ignore
+  }
+  return null;
+}
+
+function removeCookie(key: string) {
+  try {
+    if (typeof document !== 'undefined') {
+      document.cookie = `${encodeURIComponent(key)}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+    }
+  } catch {
+    // Ignore
+  }
 }
 
 export const safeStorage = {
   getItem: (key: string): string | null => {
+    // 1. Try window.localStorage
     try {
-      if (isLocalStorageWorking && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && window.localStorage) {
         const val = window.localStorage.getItem(key);
         if (val !== null) return val;
       }
     } catch {
-      // Storage access blocked or restricted on this device
+      // Storage access blocked or restricted
     }
+
+    // 2. Try cookie fallback for critical auth keys
+    if (key.includes('credentials') || key.includes('active_email') || key.includes('accounts_vault')) {
+      const cookieVal = readCookie(key);
+      if (cookieVal !== null) {
+        // Recover back to localStorage if available
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem(key, cookieVal);
+          }
+        } catch {}
+        return cookieVal;
+      }
+    }
+
+    // 3. In-memory fallback
     return memoryFallback.getItem(key);
   },
 
   setItem: (key: string, value: string): void => {
+    const str = String(value);
+
+    // Always update in-memory
+    memoryFallback.setItem(key, str);
+
+    // Persist to window.localStorage
     try {
-      if (isLocalStorageWorking && typeof window !== 'undefined') {
-        window.localStorage.setItem(key, String(value));
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, str);
       }
     } catch {
-      // Quota exceeded or security restriction (e.g. Samsung Knox, Xiaomi privacy mode)
-      isLocalStorageWorking = false;
+      // Handled gracefully without permanent disable
     }
-    memoryFallback.setItem(key, String(value));
+
+    // Also persist critical auth keys in cookie (if not too large)
+    if ((key.includes('credentials') || key.includes('active_email') || key.includes('accounts_vault')) && str.length < 3500) {
+      writeCookie(key, str);
+    }
   },
 
   removeItem: (key: string): void => {
+    memoryFallback.removeItem(key);
+
     try {
-      if (isLocalStorageWorking && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(key);
       }
     } catch {
       // Ignore
     }
-    memoryFallback.removeItem(key);
+
+    if (key.includes('credentials') || key.includes('active_email') || key.includes('accounts_vault')) {
+      removeCookie(key);
+    }
   },
 
   clear: (): void => {
+    memoryFallback.clear();
+
     try {
-      if (isLocalStorageWorking && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.clear();
       }
     } catch {
       // Ignore
     }
-    memoryFallback.clear();
   }
 };

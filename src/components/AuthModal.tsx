@@ -18,7 +18,12 @@ import {
   Database,
   Trash2
 } from 'lucide-react';
-import { getSavedCredentials, UserAccountMemory, removeStoredAccount } from '../utils/userMemory';
+import {
+  getSavedCredentials,
+  UserAccountMemory,
+  removeStoredAccount,
+  lookupAccountInDatabase
+} from '../utils/userMemory';
 
 export const AuthModal: React.FC = () => {
   const { login, registerAccount, getAllStoredAccounts, changePassword } = useApp();
@@ -51,11 +56,11 @@ export const AuthModal: React.FC = () => {
   const [storedAccounts, setStoredAccounts] = useState<UserAccountMemory[]>(() => getAllStoredAccounts());
 
   useEffect(() => {
-    // Only load accounts stored locally on this device
+    // 1. Load accounts stored on this device
     const local = getAllStoredAccounts();
     setStoredAccounts(local);
 
-    // Pre-fill remembered credentials if exists
+    // 2. Pre-fill remembered credentials if exists
     const saved = getSavedCredentials();
     if (saved && saved.email) {
       setEmail(saved.email);
@@ -63,13 +68,59 @@ export const AuthModal: React.FC = () => {
         setPassword(saved.password);
       }
       setRememberMe(saved.rememberMe !== false);
+
+      // Verify and sync password from server database
+      lookupAccountInDatabase(saved.email).then(acc => {
+        if (acc && acc.password && acc.password !== '***') {
+          setPassword(acc.password.trim());
+        }
+        setStoredAccounts(getAllStoredAccounts());
+      });
     } else if (local.length === 1) {
       setEmail(local[0].email);
       if (local[0].password && local[0].password !== '***') {
         setPassword(local[0].password);
+      } else {
+        lookupAccountInDatabase(local[0].email).then(acc => {
+          if (acc && acc.password && acc.password !== '***') {
+            setPassword(acc.password.trim());
+          }
+        });
       }
     }
   }, []);
+
+  const handleEmailChange = (val: string) => {
+    const clean = val.trim();
+    setEmail(clean);
+
+    if (!clean) return;
+    const norm = clean.toLowerCase();
+
+    // Check saved credentials
+    const creds = getSavedCredentials();
+    if (creds && creds.email.toLowerCase() === norm && creds.password) {
+      setPassword(creds.password);
+      return;
+    }
+
+    // Check local accounts
+    const local = getAllStoredAccounts();
+    const found = local.find(a => a.email.toLowerCase() === norm);
+    if (found && found.password && found.password !== '***') {
+      setPassword(found.password);
+      return;
+    }
+
+    // Check central database
+    if (norm.includes('@') && norm.includes('.')) {
+      lookupAccountInDatabase(norm).then(acc => {
+        if (acc && acc.password && acc.password !== '***') {
+          setPassword(acc.password.trim());
+        }
+      });
+    }
+  };
 
   const handleDeleteAccount = (accountEmail: string) => {
     const updated = removeStoredAccount(accountEmail);

@@ -103,9 +103,23 @@ async function startServer() {
     const existing = db.accounts.find(a => a.email.toLowerCase() === normEmail);
 
     if (existing) {
+      // If already registered with the same password, perform successful login
+      if (String(existing.password).trim() === cleanPassword) {
+        existing.lastActive = new Date().toISOString();
+        if (cleanName && (!existing.name || existing.name === 'Estudante de Enfermagem')) {
+          existing.name = cleanName;
+        }
+        saveDb(db);
+        return res.json({
+          success: true,
+          account: existing,
+          message: 'Conta encontrada no banco de dados. Bem-vindo de volta!'
+        });
+      }
+
       return res.status(400).json({
         success: false,
-        message: 'Este e-mail já está cadastrado no banco de dados. Por favor, faça login com sua senha.'
+        message: 'Este e-mail já está cadastrado no banco de dados. Por favor, faça login com sua senha na aba Entrar.'
       });
     }
 
@@ -185,6 +199,35 @@ async function startServer() {
     return res.json({
       success: true,
       account
+    });
+  });
+
+  // Lookup saved account by email to restore remembered credentials
+  app.post('/api/auth/lookup', (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'E-mail não fornecido.' });
+    }
+
+    const normEmail = String(email).trim().toLowerCase();
+    const db = loadDb();
+    const account = db.accounts.find(a => a.email.toLowerCase() === normEmail);
+
+    if (!account) {
+      return res.json({ success: false, found: false });
+    }
+
+    return res.json({
+      success: true,
+      found: true,
+      account: {
+        id: account.id,
+        email: account.email,
+        name: account.name,
+        targetExam: account.targetExam,
+        password: account.password,
+        avatarUrl: account.avatarUrl || ''
+      }
     });
   });
 

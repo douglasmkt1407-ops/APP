@@ -106,9 +106,15 @@ export const saveOrUpdateAccount = (account: UserAccountMemory): void => {
   const accounts = getAllAccounts();
   const index = accounts.findIndex(a => a.email.toLowerCase() === norm);
 
+  const existingPassword = index >= 0 ? accounts[index].password : '';
+  const resolvedPassword = (account.password && account.password !== '***')
+    ? account.password.trim()
+    : (existingPassword || '');
+
   const updatedAccount: UserAccountMemory = {
     ...account,
     email: norm,
+    password: resolvedPassword,
     lastActive: new Date().toISOString()
   };
 
@@ -122,6 +128,40 @@ export const saveOrUpdateAccount = (account: UserAccountMemory): void => {
   }
 
   saveAllAccounts(accounts);
+
+  // Keep saved credentials in sync if this is the remembered user
+  const currentCreds = getSavedCredentials();
+  if (currentCreds && currentCreds.email.toLowerCase() === norm && resolvedPassword) {
+    setSavedCredentials({
+      ...currentCreds,
+      password: resolvedPassword
+    });
+  }
+};
+
+// Query the server database directly to check if an account exists and restore its credentials
+export const lookupAccountInDatabase = async (
+  email: string
+): Promise<UserAccountMemory | null> => {
+  if (!email || !email.includes('@')) return null;
+  const norm = email.trim().toLowerCase();
+
+  try {
+    const res = await fetch('/api/auth/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: norm })
+    });
+    const data = await res.json();
+    if (data.success && data.found && data.account) {
+      saveOrUpdateAccount(data.account);
+      return data.account;
+    }
+  } catch {
+    // Offline fallback
+  }
+
+  return getAccountByEmail(norm);
 };
 
 // Update only specific parts of the active user's memory (stats, goals, profile)
@@ -277,9 +317,19 @@ export const getSavedCredentials = (): SavedCredentials | null => {
           safeStorage.removeItem(SAVED_CREDENTIALS_KEY);
           return null;
         }
+
+        let pwd = (parsed.password || '').trim();
+        // If password is blank or masked in saved credentials, check vault
+        if (!pwd || pwd === '***') {
+          const acc = getAccountByEmail(norm);
+          if (acc && acc.password && acc.password !== '***') {
+            pwd = acc.password.trim();
+          }
+        }
+
         return {
-          email: parsed.email,
-          password: parsed.password || '',
+          email: parsed.email.trim(),
+          password: pwd,
           rememberMe: parsed.rememberMe !== false,
           autoLogin: parsed.autoLogin !== false
         };
@@ -288,6 +338,22 @@ export const getSavedCredentials = (): SavedCredentials | null => {
   } catch {
     // ignore
   }
+
+  // Fallback: If saved credentials was lost but accounts vault has 1 account with password, recover it!
+  try {
+    const all = getAllAccounts();
+    if (all.length === 1 && all[0].email && all[0].password && all[0].password !== '***') {
+      const recovered: SavedCredentials = {
+        email: all[0].email.trim(),
+        password: all[0].password.trim(),
+        rememberMe: true,
+        autoLogin: true
+      };
+      setSavedCredentials(recovered);
+      return recovered;
+    }
+  } catch {}
+
   return null;
 };
 
