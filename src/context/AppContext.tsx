@@ -37,6 +37,7 @@ import {
   fetchAccountFromServer,
   fetchAllAccountsFromServer
 } from '../utils/userMemory';
+import { safeStorage } from '../utils/safeStorage';
 
 export interface RegisteredAccount {
   id: string;
@@ -313,7 +314,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    const saved = localStorage.getItem('nextenf_user_session');
+    const saved = safeStorage.getItem('nextenf_user_session');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -336,7 +337,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user?.email) {
       const norm = user.email.trim().toLowerCase();
       updateActiveAccountData(norm, { hasCompletedTour: true });
-      localStorage.setItem('nextenf_tour_done_' + norm, 'true');
+      safeStorage.setItem('nextenf_tour_done_' + norm, 'true');
     }
   }, [user]);
 
@@ -344,7 +345,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (user?.email) {
       const norm = user.email.trim().toLowerCase();
-      const localDone = localStorage.getItem('nextenf_tour_done_' + norm);
+      const localDone = safeStorage.getItem('nextenf_tour_done_' + norm);
       const acc = getAccountByEmail(norm);
       if (!acc?.hasCompletedTour && localDone !== 'true') {
         const timer = setTimeout(() => {
@@ -365,7 +366,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    const saved = localStorage.getItem('nextenf_user_stats');
+    const saved = safeStorage.getItem('nextenf_user_stats');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -400,7 +401,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    const saved = localStorage.getItem('nextenf_notifications');
+    const saved = safeStorage.getItem('nextenf_notifications');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -418,7 +419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Daily goals date tracker
   const [dailyGoalsDate, setDailyGoalsDate] = useState<string>(() => {
-    return localStorage.getItem('nextenf_daily_goals_date') || getTodayDateKey();
+    return safeStorage.getItem('nextenf_daily_goals_date') || getTodayDateKey();
   });
 
   // Daily goals state with automatic renewal if date has changed
@@ -437,8 +438,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (!savedGoals) {
-      const savedDateRaw = localStorage.getItem('nextenf_daily_goals_date');
-      const savedRaw = localStorage.getItem('nextenf_daily_goals');
+      const savedDateRaw = safeStorage.getItem('nextenf_daily_goals_date');
+      const savedRaw = safeStorage.getItem('nextenf_daily_goals');
       if (savedRaw) {
         try {
           savedGoals = JSON.parse(savedRaw);
@@ -455,10 +456,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // New day detected or initial load: automatically renew the checklist!
-    localStorage.setItem('nextenf_daily_goals_date', today);
+    safeStorage.setItem('nextenf_daily_goals_date', today);
     if (savedGoals) {
       const renewed = savedGoals.map(g => ({ ...g, completed: false }));
-      localStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
+      safeStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
       return renewed;
     }
 
@@ -500,25 +501,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Automated Presence & Session Tracking (Entrada e Saída)
   const [sessionEntryTime, setSessionEntryTime] = useState<string>(() => {
-    const existing = localStorage.getItem('nextenf_current_entry_time');
+    const existing = safeStorage.getItem('nextenf_current_entry_time');
     if (existing) return existing;
     const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    localStorage.setItem('nextenf_current_entry_time', now);
+    safeStorage.setItem('nextenf_current_entry_time', now);
     return now;
   });
 
   const [sessionLastExitTime, setSessionLastExitTime] = useState<string>(() => {
-    return localStorage.getItem('nextenf_last_exit_time') || '--:--';
+    return safeStorage.getItem('nextenf_last_exit_time') || '--:--';
   });
 
   const [sessionActiveSeconds, setSessionActiveSeconds] = useState<number>(0);
   const [isSessionTracking, setIsSessionTracking] = useState<boolean>(true);
   const sessionAccruedRef = useRef<number>(0);
 
-  // Sync to database vault and localStorage
+  // Sync to database vault and localStorage safely
   useEffect(() => {
     if (user?.email) {
-      localStorage.setItem('nextenf_user_session', JSON.stringify(user));
+      safeStorage.setItem('nextenf_user_session', JSON.stringify(user));
       // Save directly to the account memory database vault
       updateActiveAccountData(user.email, {
         name: user.name,
@@ -530,39 +531,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications
       });
     } else {
-      localStorage.removeItem('nextenf_user_session');
+      safeStorage.removeItem('nextenf_user_session');
     }
   }, [user, stats, dailyGoals, dailyGoalsDate, notifications]);
 
   useEffect(() => {
-    localStorage.setItem('nextenf_user_stats', JSON.stringify(stats));
+    safeStorage.setItem('nextenf_user_stats', JSON.stringify(stats));
   }, [stats]);
 
   useEffect(() => {
-    localStorage.setItem('nextenf_notifications', JSON.stringify(notifications));
+    safeStorage.setItem('nextenf_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem('nextenf_daily_goals', JSON.stringify(dailyGoals));
+    safeStorage.setItem('nextenf_daily_goals', JSON.stringify(dailyGoals));
   }, [dailyGoals]);
 
   // Active daily renewal watcher (checks midnight rollover, visibility change, and window focus)
   useEffect(() => {
     const checkDailyRenewal = () => {
       const today = getTodayDateKey();
-      const savedDate = localStorage.getItem('nextenf_daily_goals_date');
+      const savedDate = safeStorage.getItem('nextenf_daily_goals_date');
 
       if (savedDate && savedDate !== today) {
         // It is a new day! Automatically renew daily checklist
         setDailyGoals(prev => {
           const renewed = prev.map(g => ({ ...g, completed: false }));
-          localStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
-          localStorage.setItem('nextenf_daily_goals_date', today);
+          safeStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
+          safeStorage.setItem('nextenf_daily_goals_date', today);
           return renewed;
         });
         setDailyGoalsDate(today);
       } else if (!savedDate) {
-        localStorage.setItem('nextenf_daily_goals_date', today);
+        safeStorage.setItem('nextenf_daily_goals_date', today);
         setDailyGoalsDate(today);
       }
     };
@@ -605,7 +606,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         studyTimeHours: 0.0,
         dailyStudyHistory: updatedHistory
       };
-      localStorage.setItem('nextenf_user_stats', JSON.stringify(updated));
+      safeStorage.setItem('nextenf_user_stats', JSON.stringify(updated));
       return updated;
     });
 
@@ -664,13 +665,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const handleBeforeUnload = () => {
       const exitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      localStorage.setItem('nextenf_last_exit_time', exitTime);
+      safeStorage.setItem('nextenf_last_exit_time', exitTime);
 
       if (sessionAccruedRef.current > 0) {
         const remainingHours = Number((sessionAccruedRef.current / 3600).toFixed(4));
         sessionAccruedRef.current = 0;
         try {
-          const rawStats = localStorage.getItem('nextenf_user_stats');
+          const rawStats = safeStorage.getItem('nextenf_user_stats');
           if (rawStats) {
             const parsed: UserStats = JSON.parse(rawStats);
             const today = getTodayDateKey();
@@ -679,7 +680,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const updatedToday = Number(((history[today] || 0) + remainingHours).toFixed(4));
             parsed.studyTimeHours = Math.max(0, updatedTotal);
             parsed.dailyStudyHistory = { ...history, [today]: Math.max(0, updatedToday) };
-            localStorage.setItem('nextenf_user_stats', JSON.stringify(parsed));
+            safeStorage.setItem('nextenf_user_stats', JSON.stringify(parsed));
           }
         } catch {
           // ignore
@@ -690,7 +691,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         const exitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        localStorage.setItem('nextenf_last_exit_time', exitTime);
+        safeStorage.setItem('nextenf_last_exit_time', exitTime);
         setSessionLastExitTime(exitTime);
 
         if (sessionAccruedRef.current > 0) {
@@ -699,7 +700,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           addStudySeconds(toAdd);
         }
       } else if (document.visibilityState === 'visible') {
-        const lastExit = localStorage.getItem('nextenf_last_exit_time');
+        const lastExit = safeStorage.getItem('nextenf_last_exit_time');
         if (lastExit) setSessionLastExitTime(lastExit);
       }
     };
@@ -889,7 +890,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const entryNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setSessionEntryTime(entryNow);
-    localStorage.setItem('nextenf_current_entry_time', entryNow);
+    safeStorage.setItem('nextenf_current_entry_time', entryNow);
     setSessionActiveSeconds(0);
     sessionAccruedRef.current = 0;
 
@@ -905,9 +906,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     rememberMe = true
   ): Promise<{ success: boolean; message?: string }> => {
     const normEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const cleanName = name.trim();
+    const cleanTarget = targetExam.trim() || 'Concurso Técnico em Enfermagem / EBSERH';
 
     // 1. Attempt central server registration
-    const srv = await serverRegister(normEmail, password, name, targetExam);
+    const srv = await serverRegister(normEmail, cleanPassword, cleanName, cleanTarget);
     let newAccount: UserAccountMemory;
 
     if (srv.success && srv.account) {
@@ -927,9 +931,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       newAccount = {
         id: 'user_' + Date.now(),
         email: normEmail,
-        password: password.trim(),
-        name: name.trim() || 'Estudante de Enfermagem',
-        targetExam: targetExam.trim() || 'Concurso Técnico em Enfermagem / EBSERH',
+        password: cleanPassword,
+        name: cleanName || 'Estudante de Enfermagem',
+        targetExam: cleanTarget,
         avatarUrl: '',
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString(),
@@ -967,7 +971,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const entryNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setSessionEntryTime(entryNow);
-    localStorage.setItem('nextenf_current_entry_time', entryNow);
+    safeStorage.setItem('nextenf_current_entry_time', entryNow);
     setSessionActiveSeconds(0);
     sessionAccruedRef.current = 0;
 
@@ -987,7 +991,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addStudySeconds(remaining);
     }
     const exitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    localStorage.setItem('nextenf_last_exit_time', exitTime);
+    safeStorage.setItem('nextenf_last_exit_time', exitTime);
     setSessionLastExitTime(exitTime);
 
     if (user?.email) {
@@ -1001,7 +1005,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setActiveEmail(null);
     setUser(null);
-    localStorage.removeItem('nextenf_user_session');
+    safeStorage.removeItem('nextenf_user_session');
   };
 
   const updateProfile = (name: string, targetExam: string, avatarUrl?: string) => {
@@ -1053,9 +1057,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const today = getTodayDateKey();
 
     // Immediate forced persistence
-    localStorage.setItem('nextenf_user_stats', JSON.stringify(freshZero));
-    localStorage.setItem('nextenf_daily_goals', JSON.stringify(freshGoals));
-    localStorage.setItem('nextenf_daily_goals_date', today);
+    safeStorage.setItem('nextenf_user_stats', JSON.stringify(freshZero));
+    safeStorage.setItem('nextenf_daily_goals', JSON.stringify(freshGoals));
+    safeStorage.setItem('nextenf_daily_goals_date', today);
 
     setStats(freshZero);
     setDailyGoals(freshGoals);
@@ -1139,7 +1143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       dailyStudyHistory: history
     };
 
-    localStorage.setItem('nextenf_user_stats', JSON.stringify(demoStats));
+    safeStorage.setItem('nextenf_user_stats', JSON.stringify(demoStats));
     setStats(demoStats);
 
     setInAppNotification({
@@ -1317,7 +1321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setDailyGoals(prev => {
       const updated = [...prev, newGoal];
-      localStorage.setItem('nextenf_daily_goals', JSON.stringify(updated));
+      safeStorage.setItem('nextenf_daily_goals', JSON.stringify(updated));
       return updated;
     });
     setInAppNotification({
@@ -1339,7 +1343,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return g;
       });
-      localStorage.setItem('nextenf_daily_goals', JSON.stringify(updated));
+      safeStorage.setItem('nextenf_daily_goals', JSON.stringify(updated));
       return updated;
     });
     setInAppNotification({
@@ -1351,7 +1355,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteDailyGoal = (id: string) => {
     setDailyGoals(prev => {
       const updated = prev.filter(g => g.id !== id);
-      localStorage.setItem('nextenf_daily_goals', JSON.stringify(updated));
+      safeStorage.setItem('nextenf_daily_goals', JSON.stringify(updated));
       return updated;
     });
     setInAppNotification({
@@ -1364,8 +1368,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const today = getTodayDateKey();
     setDailyGoals(prev => {
       const renewed = prev.map(g => ({ ...g, completed: false }));
-      localStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
-      localStorage.setItem('nextenf_daily_goals_date', today);
+      safeStorage.setItem('nextenf_daily_goals', JSON.stringify(renewed));
+      safeStorage.setItem('nextenf_daily_goals_date', today);
       return renewed;
     });
     setDailyGoalsDate(today);

@@ -1,4 +1,5 @@
 import { UserProfile, UserStats, DailyGoalItem, NotificationSettings } from '../types';
+import { safeStorage } from './safeStorage';
 
 export interface SavedCredentials {
   email: string;
@@ -39,7 +40,7 @@ export const TEST_ACCOUNTS_TO_PURGE = [
 // Retrieve all accounts stored on this specific device
 export const getAllAccounts = (): UserAccountMemory[] => {
   try {
-    const raw = localStorage.getItem(ACCOUNTS_VAULT_KEY);
+    const raw = safeStorage.getItem(ACCOUNTS_VAULT_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
@@ -49,7 +50,7 @@ export const getAllAccounts = (): UserAccountMemory[] => {
           return !TEST_ACCOUNTS_TO_PURGE.includes(e) && a.id !== 'user_aluno';
         });
         if (cleaned.length !== parsed.length) {
-          localStorage.setItem(ACCOUNTS_VAULT_KEY, JSON.stringify(cleaned));
+          safeStorage.setItem(ACCOUNTS_VAULT_KEY, JSON.stringify(cleaned));
         }
         return cleaned;
       }
@@ -85,7 +86,7 @@ export const saveAllAccounts = (accounts: UserAccountMemory[]): void => {
       const e = a.email.toLowerCase().trim();
       return !TEST_ACCOUNTS_TO_PURGE.includes(e) && a.id !== 'user_aluno';
     });
-    localStorage.setItem(ACCOUNTS_VAULT_KEY, JSON.stringify(cleaned));
+    safeStorage.setItem(ACCOUNTS_VAULT_KEY, JSON.stringify(cleaned));
   } catch (err) {
     console.error('Falha ao salvar no cofre de contas:', err);
   }
@@ -192,11 +193,21 @@ export const serverRegister = async (
   name: string,
   targetExam: string
 ): Promise<{ success: boolean; account?: UserAccountMemory; message?: string }> => {
+  const normEmail = email.trim().toLowerCase();
+  const cleanPassword = password.trim();
+  const cleanName = name.trim();
+  const cleanExam = targetExam.trim();
+
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, targetExam })
+      body: JSON.stringify({
+        email: normEmail,
+        password: cleanPassword,
+        name: cleanName,
+        targetExam: cleanExam
+      })
     });
     const data = await res.json();
     if (data.success && data.account) {
@@ -213,11 +224,14 @@ export const serverLogin = async (
   email: string,
   password?: string
 ): Promise<{ success: boolean; account?: UserAccountMemory; message?: string }> => {
+  const normEmail = email.trim().toLowerCase();
+  const cleanPassword = password ? password.trim() : '';
+
   try {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email: normEmail, password: cleanPassword })
     });
     const data = await res.json();
     if (data.success && data.account) {
@@ -254,13 +268,13 @@ export const serverChangePassword = async (
 // Saved credentials management (Email and Password remembered on device)
 export const getSavedCredentials = (): SavedCredentials | null => {
   try {
-    const raw = localStorage.getItem(SAVED_CREDENTIALS_KEY);
+    const raw = safeStorage.getItem(SAVED_CREDENTIALS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.email) {
         const norm = parsed.email.trim().toLowerCase();
         if (TEST_ACCOUNTS_TO_PURGE.includes(norm)) {
-          localStorage.removeItem(SAVED_CREDENTIALS_KEY);
+          safeStorage.removeItem(SAVED_CREDENTIALS_KEY);
           return null;
         }
         return {
@@ -282,12 +296,12 @@ export const setSavedCredentials = (creds: SavedCredentials | null): void => {
     if (creds) {
       const norm = creds.email?.trim().toLowerCase();
       if (norm && TEST_ACCOUNTS_TO_PURGE.includes(norm)) {
-        localStorage.removeItem(SAVED_CREDENTIALS_KEY);
+        safeStorage.removeItem(SAVED_CREDENTIALS_KEY);
         return;
       }
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(creds));
+      safeStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(creds));
     } else {
-      localStorage.removeItem(SAVED_CREDENTIALS_KEY);
+      safeStorage.removeItem(SAVED_CREDENTIALS_KEY);
     }
   } catch {
     // ignore
@@ -297,9 +311,9 @@ export const setSavedCredentials = (creds: SavedCredentials | null): void => {
 // Active logged in email management
 export const getActiveEmail = (): string | null => {
   try {
-    const email = localStorage.getItem(ACTIVE_EMAIL_KEY);
+    const email = safeStorage.getItem(ACTIVE_EMAIL_KEY);
     if (email && TEST_ACCOUNTS_TO_PURGE.includes(email.trim().toLowerCase())) {
-      localStorage.removeItem(ACTIVE_EMAIL_KEY);
+      safeStorage.removeItem(ACTIVE_EMAIL_KEY);
       return null;
     }
     return email;
@@ -311,11 +325,11 @@ export const getActiveEmail = (): string | null => {
 export const setActiveEmail = (email: string | null): void => {
   try {
     if (email) {
-      localStorage.setItem(ACTIVE_EMAIL_KEY, email.trim().toLowerCase());
-      localStorage.removeItem(EXPLICIT_LOGOUT_KEY);
+      safeStorage.setItem(ACTIVE_EMAIL_KEY, email.trim().toLowerCase());
+      safeStorage.removeItem(EXPLICIT_LOGOUT_KEY);
     } else {
-      localStorage.removeItem(ACTIVE_EMAIL_KEY);
-      localStorage.setItem(EXPLICIT_LOGOUT_KEY, 'true');
+      safeStorage.removeItem(ACTIVE_EMAIL_KEY);
+      safeStorage.setItem(EXPLICIT_LOGOUT_KEY, 'true');
     }
   } catch {
     // ignore
@@ -324,7 +338,7 @@ export const setActiveEmail = (email: string | null): void => {
 
 export const isExplicitLoggedOut = (): boolean => {
   try {
-    return localStorage.getItem(EXPLICIT_LOGOUT_KEY) === 'true';
+    return safeStorage.getItem(EXPLICIT_LOGOUT_KEY) === 'true';
   } catch {
     return false;
   }

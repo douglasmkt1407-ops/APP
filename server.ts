@@ -94,7 +94,11 @@ async function startServer() {
       return res.status(400).json({ success: false, message: 'Dados incompletos para cadastro.' });
     }
 
-    const normEmail = email.trim().toLowerCase();
+    const normEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password).trim();
+    const cleanName = String(name).trim();
+    const cleanTarget = String(targetExam || '').trim() || 'Concurso Técnico em Enfermagem / EBSERH';
+
     const db = loadDb();
     const existing = db.accounts.find(a => a.email.toLowerCase() === normEmail);
 
@@ -108,9 +112,9 @@ async function startServer() {
     const newAccount = {
       id: 'user_' + Date.now(),
       email: normEmail,
-      password: String(password).trim(),
-      name: String(name).trim() || 'Estudante de Enfermagem',
-      targetExam: String(targetExam || '').trim() || 'Concurso Técnico em Enfermagem / EBSERH',
+      password: cleanPassword,
+      name: cleanName || 'Estudante de Enfermagem',
+      targetExam: cleanTarget,
       avatarUrl: '',
       createdAt: new Date().toISOString(),
       lastActive: new Date().toISOString(),
@@ -149,7 +153,8 @@ async function startServer() {
       return res.status(400).json({ success: false, message: 'Informe o e-mail cadastrado.' });
     }
 
-    const normEmail = email.trim().toLowerCase();
+    const normEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password || '').trim();
     const db = loadDb();
     const account = db.accounts.find(a => a.email.toLowerCase() === normEmail);
 
@@ -160,7 +165,14 @@ async function startServer() {
       });
     }
 
-    if (password && String(account.password).trim() !== String(password).trim()) {
+    if (!cleanPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Por favor, digite sua senha de acesso.'
+      });
+    }
+
+    if (String(account.password).trim() !== cleanPassword) {
       return res.status(401).json({
         success: false,
         message: 'Senha incorreta. Verifique suas credenciais e tente novamente.'
